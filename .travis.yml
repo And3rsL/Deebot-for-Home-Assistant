@@ -1,0 +1,15 @@
+sudo: required
+services:
+  - docker
+before_install:
+  - sudo apt-get install jq
+  - wget https://raw.githubusercontent.com/bestlibre/hassio-addons/master/build.sh -O build.sh
+  - chmod u+x build.sh
+  - wget https://raw.githubusercontent.com/home-assistant/hassio-build/master/build-scripts/addons/create_hassio_addon.sh -O create_hassio_addon.sh
+  - chmod u+x create_hassio_addon.sh
+env:
+  - ADDON="skywaker"
+  - ADDON="bumper"
+script:
+  - docker login -u $DOCKER_USER -p $DOCKER_PASS
+  - ./build.sh $ADDON

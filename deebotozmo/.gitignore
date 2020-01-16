@@ -1,0 +1,19 @@
+__pycache__
+Pipfile
+Pipfile.lock
+scratch*
+.idea
+build
+dist
+
+# Nosetests files
+cover/
+.coverage
+
+# Ignore Vscode files
+.vscode/
+
+# Ignore sucks.egg-info
+sucks.egg-info/
+.noseids
+nosetests.xml
