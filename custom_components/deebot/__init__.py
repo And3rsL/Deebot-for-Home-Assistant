@@ -8,7 +8,7 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTAN
 from homeassistant.helpers import discovery
 import homeassistant.helpers.config_validation as cv
 
-REQUIREMENTS = ['deebotozmo==1.0.5']
+REQUIREMENTS = ['deebotozmo==1.0.6']
 
 _LOGGER = logging.getLogger(__name__)
 
