@@ -30,9 +30,10 @@ _LOGGER = logging.getLogger(__name__)
 CLEAN_MODE_AUTO = 'auto'
 CLEAN_MODE_EDGE = 'edge'
 CLEAN_MODE_SPOT = 'spot'
+CLEAN_MODE_PAUSE = 'pause'
 CLEAN_MODE_SPOT_AREA = 'spot_area'
+CLEAN_MODE_CUSTOM_AREA = 'custom_area'
 CLEAN_MODE_SINGLE_ROOM = 'single_room'
-CLEAN_MODE_STOP = 'stop'
 
 CLEAN_ACTION_START = 'start'
 CLEAN_ACTION_PAUSE = 'pause'
@@ -63,8 +64,8 @@ CLEAN_MODE_TO_ECOVACS = {
     CLEAN_MODE_EDGE: 'border',
     CLEAN_MODE_SPOT: 'spot',
     CLEAN_MODE_SPOT_AREA: 'SpotArea',
+	CLEAN_MODE_CUSTOM_AREA: 'customArea',
     CLEAN_MODE_SINGLE_ROOM: 'singleroom',
-    CLEAN_MODE_STOP: 'stop'
 }
 
 CLEAN_ACTION_TO_ECOVACS = {
@@ -87,7 +88,6 @@ CLEAN_MODE_FROM_ECOVACS = {
     'spot': CLEAN_MODE_SPOT,
     'spot_area': CLEAN_MODE_SPOT_AREA,
     'singleroom': CLEAN_MODE_SINGLE_ROOM,
-    'stop': CLEAN_MODE_STOP,
     'going': CHARGE_MODE_RETURNING
 }
 
@@ -110,7 +110,7 @@ CHARGE_MODE_TO_ECOVACS = {
 
 CHARGE_MODE_FROM_ECOVACS = {
     'going': CHARGE_MODE_RETURNING,
-    'slot_charging': CHARGE_MODE_CHARGING,
+    'charging': CHARGE_MODE_CHARGING,
     'idle': CHARGE_MODE_IDLE
 }
 
@@ -381,7 +381,7 @@ class EventListener(object):
         self._emitter.unsubscribe(self)
 
 class VacBot():
-    def __init__(self, user, domain, resource, secret, vacuum, continent, server_address=None, monitor=False, verify_ssl=True):
+    def __init__(self, user, domain, resource, secret, vacuum, continent, server_address=None, monitor=True, verify_ssl=True):
 
         self.vacuum = vacuum
 
@@ -445,7 +445,7 @@ class VacBot():
             if not self.vacuum['iotmq']:            
                 self.xmpp.schedule('Components', 50, lambda: self.refresh_components(), repeat=True)
             else:
-                self.iotmq.schedule(50,self.refresh_components)
+                self.iotmq.schedule(30,self.request_all_statuses)
 
     def _handle_ctl(self, ctl):
         method = '_handle_' + ctl['event']
@@ -494,9 +494,19 @@ class VacBot():
 
     def _handle_clean_report(self, event):
         if self.vacuum['json']:
-            _LOGGER.debug("CLEAN REPORT NOT SUPPORTED YET")
-            return
+            if event['body']['data']['state'] == 'clean':
+                self.clean_status = event['body']['data']['cleanState']['type']
+
+                if event['body']['data']['trigger'] == 'app':
+                    self.vacuum_status = event['body']['data']['cleanState']['motionState']
+                elif event['body']['data']['trigger'] == 'alert':
+                    self.vacuum_status = 'error'
+
+                self.statusEvents.notify(self.vacuum_status)
+            else:
+                return
         else:
+		    #Not for DEEBOT
             type = event['type']
             try:
                 type = CLEAN_MODE_FROM_ECOVACS[type]
@@ -508,21 +518,21 @@ class VacBot():
             except KeyError:
                 _LOGGER.warning("Unknown cleaning status '" + type + "'")
         
-        self.clean_status = type
-        self.vacuum_status = type        
+            self.clean_status = type
+            self.vacuum_status = type        
         
-        fan = event.get('speed', None)
-        if fan is not None:
-            try:
-                fan = FAN_SPEED_FROM_ECOVACS[fan]
-            except KeyError:
-                _LOGGER.warning("Unknown fan speed: '" + fan + "'")
-        self.fan_speed = fan
-        self.statusEvents.notify(self.vacuum_status)
-        if self.fan_speed:
-            _LOGGER.debug("*** clean_status = " + self.clean_status + " fan_speed = " + self.fan_speed)
-        else:
-            _LOGGER.debug("*** clean_status = " + self.clean_status + " fan_speed = None")
+            fan = event.get('speed', None)
+            if fan is not None:
+                try:
+                    fan = FAN_SPEED_FROM_ECOVACS[fan]
+                except KeyError:
+                    _LOGGER.warning("Unknown fan speed: '" + fan + "'")
+            self.fan_speed = fan
+            self.statusEvents.notify(self.vacuum_status)
+            if self.fan_speed:
+                _LOGGER.debug("*** clean_status = " + self.clean_status + " fan_speed = " + self.fan_speed)
+            else:
+                _LOGGER.debug("*** clean_status = " + self.clean_status + " fan_speed = None")
 
     def _handle_battery_info(self, event):
         if self.vacuum['json']:
@@ -546,12 +556,12 @@ class VacBot():
         if self.vacuum['json']:
             if event['body']['code'] == 0:
                 if event['body']['data']['isCharging'] == 1:
-                    status = 'slot_charging'
+                    status = 'charging'
                 else:
                     status = 'idle'
             else:
-                if event['ret'] == 'fail' and event['errno'] == '8': #Already charging
-                    status = 'slot_charging'
+                if event['body']['msg'] == 'fail' and event['errno'] == '30007': #Already charging
+                    status = 'charging'
                 elif event['ret'] == 'fail' and event['errno'] == '5': #Busy with another command
                     status = 'idle'
                 elif event['ret'] == 'fail' and event['errno'] == '3': #Bot in stuck state, example dust bin out
@@ -599,7 +609,7 @@ class VacBot():
 
     @property
     def is_cleaning(self) -> bool:
-        return self.vacuum_status in CLEANING_STATES
+        return self.clean_status in CLEANING_STATES
 
     def send_ping(self):
         try:
@@ -700,10 +710,8 @@ class EcoVacsIOTMQ(ClientMQTT):
         self.scheduler_thread = threading.Thread(target=self.scheduler.run, daemon=True, name="mqtt_schedule_thread")
         self.verify_ssl = str_to_bool_or_cert(verify_ssl)
         
-		
         if server_address is None: 	
-            #self.hostname = ('mq-{}.ecouser.net'.format(self.continent))
-            self.hostname = 'mq-eu.ecouser.net'
+            self.hostname = ('mq-{}.ecouser.net'.format(self.continent))
             self.port = 8883
         else:
             saddress = server_address.split(":")
@@ -777,9 +785,6 @@ class EcoVacsIOTMQ(ClientMQTT):
             return False
 
     def send_command(self, action, recipient):
-        if action.name == "Clean": #For handling Clean when action not specified (i.e. CLI)
-            action.args['clean']['act'] = CLEAN_ACTION_TO_ECOVACS['start'] #Inject a start action
-
         c = self._wrap_command(action, recipient)
         _LOGGER.debug('Sending command {0}'.format(c))        
 
@@ -908,17 +913,17 @@ class EcoVacsIOTMQ(ClientMQTT):
     def _ctl_to_dict_api_json(self, action, jsonstring):
         if jsonstring['body']['msg'] == 'ok':
             eventname = action.name.replace("get","",1) 
-            _LOGGER.debug('BEFORE Status:' + eventname)
-            if 'Clean' in eventname:
+            _LOGGER.debug('BEFORE Status:' + eventname.lower())
+            if 'clean' in eventname.lower():
                 jsonstring['event'] = "clean_report"
-            elif 'Charge' in eventname:
+            elif 'charge' in eventname.lower():
                 jsonstring['event'] = "charge_state"
-            elif 'Battery' in eventname:
+            elif 'battery' in eventname.lower():
                 jsonstring['event'] = "battery_info"
-            elif 'LifeSpan' in eventname:
+            elif 'lifespan' in eventname.lower():
                 jsonstring['event'] = "life_span"
             else:
-                _LOGGER.debug('UKNOWN Status:' + eventname)
+                _LOGGER.debug('UKNOWN Status:' + eventname.lower())
                 return
 				
         else:
@@ -1127,47 +1132,63 @@ class VacBotCommand:
 
 class Clean(VacBotCommand):
     def __init__(self, type='auto'):
+        _LOGGER.debug("called Clean")
         super().__init__('clean', {'act': CLEAN_ACTION_START,'type': type})
 
-class Spot(Clean):
+class CleanPause(VacBotCommand):
     def __init__(self):
-        super().__init__('spot', 'high')
-
-
-class Stop(Clean):
+        _LOGGER.debug("called CleanPause")
+        super().__init__('clean', {'act':'pause'})
+		
+class CleanResume(VacBotCommand):
     def __init__(self):
-        super().__init__('stop', 'normal')
-
-class SpotArea(Clean):
+        _LOGGER.debug("called CleanResume")
+        super().__init__('clean', {'act':'resume'})
+		
+class SpotArea(VacBotCommand):
     def __init__(self, action='start', area='', map_position='', cleanings='1'):
+        _LOGGER.debug("called SpotArea")
         if area != '': #For cleaning specified area
-            super().__init__('spot_area', 'normal', act=CLEAN_ACTION_TO_ECOVACS[action], mid=area)
+            super().__init__('clean', {'act': 'start', 'content': area, 'count': cleanings, 'type': 'spotArea'})
         elif map_position != '': #For cleaning custom map area, and specify deep amount 1x/2x
-            super().__init__('spot_area' ,'normal',act=CLEAN_ACTION_TO_ECOVACS[action], p=map_position, deep=cleanings)
+            super().__init__('clean', {'act': 'start', 'content': map_position, 'count': cleanings, 'type': 'customArea'})
         else:
             #no valid entries
             raise ValueError("must provide area or map_position for spotarea clean")
 
 class Charge(VacBotCommand):
     def __init__(self):
+        _LOGGER.debug("called Charge")
         super().__init__('charge', {'act':CHARGE_MODE_TO_ECOVACS['return']})
 
 class GetCleanState(VacBotCommand):
     def __init__(self):
+        _LOGGER.debug("called GetCleanState")
         super().__init__('getCleanInfo')
-
 
 class GetChargeState(VacBotCommand):
     def __init__(self):
+        _LOGGER.debug("called GetChargeState")
         super().__init__('getChargeState')
+
+class PlaySound(VacBotCommand):
+    def __init__(self):
+        _LOGGER.debug("called PlaySound")
+        super().__init__('playSound', {'count':1, 'sid': 30} )
+
+class SetRelocate(VacBotCommand):
+    def __init__(self):
+        _LOGGER.debug("called SetRelocate")
+        super().__init__('setRelocationState', {'mode':'manu'} )
 		
 class GetBatteryState(VacBotCommand):
     def __init__(self):
+        _LOGGER.debug("called GetBatteryState")
         super().__init__('getBattery')
-
 
 class GetLifeSpan(VacBotCommand):
     def __init__(self, component):
+        _LOGGER.debug("called GetLifeSpan")
         super().__init__('getLifeSpan',[COMPONENT_TO_ECOVACS[component]])
 
 class SetTime(VacBotCommand):

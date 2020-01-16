@@ -2,17 +2,18 @@
 import logging
 
 import deebotozmo
+import time
 
 from homeassistant.components.vacuum import (
     SUPPORT_BATTERY,
-    SUPPORT_CLEAN_SPOT,
     SUPPORT_LOCATE,
     SUPPORT_RETURN_HOME,
     SUPPORT_SEND_COMMAND,
     SUPPORT_STATUS,
-    SUPPORT_STOP,
     SUPPORT_TURN_OFF,
     SUPPORT_TURN_ON,
+    SUPPORT_START,
+    SUPPORT_PAUSE,
     VacuumDevice,
 )
 from homeassistant.helpers.icon import icon_for_battery_level
@@ -24,13 +25,13 @@ _LOGGER = logging.getLogger(__name__)
 SUPPORT_ECOVACS = (
     SUPPORT_BATTERY
     | SUPPORT_RETURN_HOME
-    | SUPPORT_CLEAN_SPOT
-    | SUPPORT_STOP
     | SUPPORT_TURN_OFF
     | SUPPORT_TURN_ON
     | SUPPORT_LOCATE
     | SUPPORT_STATUS
     | SUPPORT_SEND_COMMAND
+    | SUPPORT_START
+    | SUPPORT_PAUSE
 )
 
 ATTR_ERROR = "error"
@@ -123,9 +124,11 @@ class EcovacsVacuum(VacuumDevice):
 
     def return_to_base(self, **kwargs):
         """Set the vacuum cleaner to return to the dock."""
-
-        self.device.run(deebotozmo.Charge())
-
+        from deebotozmo import Charge
+        self.device.run(Charge())
+        time.sleep(5)
+        self.device.refresh_statuses()
+		
     @property
     def battery_icon(self):
         """Return the battery icon for the vacuum cleaner."""
@@ -143,31 +146,38 @@ class EcovacsVacuum(VacuumDevice):
 
     def turn_on(self, **kwargs):
         """Turn the vacuum on and start cleaning."""
-
-        self.device.run(deebotozmo.Clean())
+        from deebotozmo import Clean
+        self.device.run(Clean())
+        time.sleep(5)
+        self.device.refresh_statuses()
 
     def turn_off(self, **kwargs):
         """Turn the vacuum off stopping the cleaning and returning home."""
         self.return_to_base()
-
-    def stop(self, **kwargs):
-        """Stop the vacuum cleaner."""
-
-        self.device.run(deebotozmo.Stop())
-
-    def clean_spot(self, **kwargs):
-        """Perform a spot clean-up."""
-
-        self.device.run(deebotozmo.Spot())
-
+		
+    def pause(self, **kwargs):
+        """Pause the vacuum cleaner."""
+        from deebotozmo import CleanPause
+        self.device.run(CleanPause())
+        time.sleep(5)
+        self.device.refresh_statuses()
+		
+    def start(self, **kwargs):
+        """Start the vacuum cleaner."""
+        from deebotozmo import CleanResume
+        self.device.run(CleanResume())
+        time.sleep(5)
+        self.device.refresh_statuses()
+		
     def locate(self, **kwargs):
         """Locate the vacuum cleaner."""
-
-        self.device.run(deebotozmo.PlaySound())
+        from deebotozmo import PlaySound
+        self.device.run(PlaySound())
 
     def send_command(self, command, params=None, **kwargs):
+        from deebotozmo import VacBotCommand
         """Send a command to a vacuum cleaner."""
-        self.device.run(deebotozmo.VacBotCommand(command, params))
+        self.device.run(VacBotCommand(command, params))
 
     @property
     def device_state_attributes(self):

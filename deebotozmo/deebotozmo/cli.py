@@ -197,38 +197,32 @@ def area(area, map_position):
 
 @cli.command(help='returns to charger')
 def charge():
-    return charge_action()
+    return CliAction(GetCleanState(), terminal=False, wait=StatusWait('clean_status', 'working'))
 
 @cli.command(help='Play welcome sound')
 def playsound():
-    return playsound_action()
+    return CliAction(PlaySound(), terminal=False)
 
 @cli.command(help='Charge State')
 def chargestate():
-    return chargestate_action()
+    return CliAction(GetChargeState(), terminal=True, wait=StatusWait('charge_status', 'charging'))
 
 @cli.command(help='Life Span')
 def lifespan():
-    return lifespan_action()
-
-
-def lifespan_action():
     return CliAction(GetLifeSpan('main_brush'), terminal=False, wait=StatusWait('life_span','charging'))
 
-
-def chargestate_action():
-    return CliAction(GetChargeState(), terminal=False, wait=StatusWait('charge_status', 'charging'))
-
-def batterystate_action():
-    return CliAction(GetBatteryState(), terminal=False, wait=StatusWait('charge_status', 'charging'))
-
-def playsound_action():
-    return CliAction(PlaySound(), terminal=False)
-
-def charge_action():
-    return CliAction(Charge(), terminal=True, wait=StatusWait('charge_status', 'charging'))
-
-
+@cli.command(help='Battery State')
+def batterystate():
+    return CliAction(GetBatteryState(), terminal=False)
+	
+@cli.command(help='resume the robot')
+def pause():
+    return CliAction(CleanPause(), terminal=True, wait=StatusWait('vacuum_status', 'pause'))
+	
+@cli.command(help='resume the robot')
+def resume():
+    return CliAction(CleanResume(), terminal=True, wait=StatusWait('vacuum_status', 'working'))
+	
 @cli.command(help='stops the robot in its current position')
 def stop():
     return CliAction(Stop(), terminal=True, wait=StatusWait('clean_status', 'stop'))
@@ -257,11 +251,13 @@ def run(actions, debug):
 
         for action in actions:
             click.echo("performing " + str(action.vac_command))
-            #vacbot.run(action.vac_command)
+            vacbot.run(action.vac_command)
             vacbot.request_all_statuses()
             action.wait.wait(vacbot)
         vacbot.disconnect(wait=True)
-
+		
+        _LOGGER.debug("is_charging: {}".format(vacbot.is_charging))
+        _LOGGER.debug("is_cleaning: {}".format(vacbot.is_cleaning))
         _LOGGER.debug("Clean Status: {}".format(vacbot.clean_status))
         _LOGGER.debug("Charge Status: {}".format(vacbot.charge_status))
         _LOGGER.debug("Battery Status: {}".format(vacbot.battery_status))
