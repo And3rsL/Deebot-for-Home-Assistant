@@ -31,9 +31,9 @@ CLEAN_MODE_AUTO = 'auto'
 CLEAN_MODE_EDGE = 'edge'
 CLEAN_MODE_SPOT = 'spot'
 CLEAN_MODE_PAUSE = 'pause'
-CLEAN_MODE_SPOT_AREA = 'spot_area'
-CLEAN_MODE_CUSTOM_AREA = 'custom_area'
-CLEAN_MODE_SINGLE_ROOM = 'single_room'
+CLEAN_MODE_SPOT_AREA = 'spotArea'
+CLEAN_MODE_CUSTOM_AREA = 'customArea'
+CLEAN_MODE_SINGLE_ROOM = 'singleRoom'
 
 CLEAN_ACTION_START = 'start'
 CLEAN_ACTION_PAUSE = 'pause'
@@ -54,7 +54,7 @@ COMPONENT_FILTER = 'filter'
 
 VACUUM_STATUS_OFFLINE = 'offline'
 
-CLEANING_STATES = {CLEAN_MODE_AUTO, CLEAN_MODE_EDGE, CLEAN_MODE_SPOT, CLEAN_MODE_SPOT_AREA, CLEAN_MODE_SINGLE_ROOM}
+CLEANING_STATES = {CLEAN_MODE_AUTO, CLEAN_MODE_EDGE, CLEAN_MODE_SPOT,CLEAN_MODE_CUSTOM_AREA, CLEAN_MODE_SPOT_AREA, CLEAN_MODE_SINGLE_ROOM}
 CHARGING_STATES = {CHARGE_MODE_CHARGING}
 
 # These dictionaries convert to and from deebotozmo's consts (which closely match what the UI and manuals use)
@@ -381,7 +381,7 @@ class EventListener(object):
         self._emitter.unsubscribe(self)
 
 class VacBot():
-    def __init__(self, user, domain, resource, secret, vacuum, continent, server_address=None, monitor=True, verify_ssl=True):
+    def __init__(self, user, domain, resource, secret, vacuum, continent, server_address=None, monitor=False, verify_ssl=True):
 
         self.vacuum = vacuum
 
@@ -445,11 +445,11 @@ class VacBot():
             if not self.vacuum['iotmq']:            
                 self.xmpp.schedule('Components', 50, lambda: self.refresh_components(), repeat=True)
             else:
-                self.iotmq.schedule(30,self.request_all_statuses)
+                self.iotmq.schedule(300,self.refresh_components)
+                self.iotmq.schedule(30,self.refresh_statuses)
 
     def _handle_ctl(self, ctl):
         method = '_handle_' + ctl['event']
-        _LOGGER.debug("*** SUB TO EVENT " + method)
         if hasattr(self, method):
             getattr(self, method)(ctl)
 
@@ -464,16 +464,19 @@ class VacBot():
             _LOGGER.warning("*** error = " + error)
 
     def _handle_life_span(self, event):
-
         if self.vacuum['json']:
-            type = event['body']['data'][0]['type']
+            response = event['body']['data'][0]
+            type = response['type']
 
             try:
                 type = COMPONENT_FROM_ECOVACS[type]
             except KeyError:
                 _LOGGER.warning("Unknown component type: '" + type + "'")
-
-            lifespan = (int(event['body']['data'][0]['left'])/int(event['body']['data'][0]['total'])) * 100
+            
+            left = int(response['left'])
+            total = int(response['total'])
+			
+            lifespan = (left/total) * 100
         else:
             type = event['type']
             try:
@@ -494,19 +497,20 @@ class VacBot():
 
     def _handle_clean_report(self, event):
         if self.vacuum['json']:
-            if event['body']['data']['state'] == 'clean':
-                self.clean_status = event['body']['data']['cleanState']['type']
+            response = event['body']['data']
+            if response['state'] == 'clean':
+                self.clean_status = response['cleanState']['type']
 
-                if event['body']['data']['trigger'] == 'app':
-                    self.vacuum_status = event['body']['data']['cleanState']['motionState']
-                elif event['body']['data']['trigger'] == 'alert':
+                if response['trigger'] == 'app':
+                    self.vacuum_status = response['cleanState']['motionState']
+                elif response['trigger'] == 'alert':
                     self.vacuum_status = 'error'
 
                 self.statusEvents.notify(self.vacuum_status)
             else:
+                self.clean_status = 'idle'
                 return
         else:
-		    #Not for DEEBOT
             type = event['type']
             try:
                 type = CLEAN_MODE_FROM_ECOVACS[type]
@@ -536,10 +540,11 @@ class VacBot():
 
     def _handle_battery_info(self, event):
         if self.vacuum['json']:
+            response = event['body']
             try:
-                self.battery_status = event['body']['data']['value']
+                self.battery_status = response['data']['value']
             except ValueError:
-                _LOGGER.warning("couldn't parse battery status " + event['body'])
+                _LOGGER.warning("couldn't parse battery status " + response)
             else:
                 self.batteryEvents.notify(self.battery_status)
         else:
@@ -554,17 +559,18 @@ class VacBot():
 
     def _handle_charge_state(self, event):
         if self.vacuum['json']:
-            if event['body']['code'] == 0:
-                if event['body']['data']['isCharging'] == 1:
+            response = event['body']
+            if response['code'] == 0:
+                if response['data']['isCharging'] == 1:
                     status = 'charging'
                 else:
                     status = 'idle'
             else:
-                if event['body']['msg'] == 'fail' and event['errno'] == '30007': #Already charging
+                if response['msg'] == 'fail' and response['code'] == '30007': #Already charging
                     status = 'charging'
-                elif event['ret'] == 'fail' and event['errno'] == '5': #Busy with another command
+                elif response['msg'] == 'fail' and response['code'] == '5': #Busy with another command
                     status = 'idle'
-                elif event['ret'] == 'fail' and event['errno'] == '3': #Bot in stuck state, example dust bin out
+                elif response['msg'] == 'fail' and response['code'] == '3': #Bot in stuck state, example dust bin out
                     status = 'idle'
                 else: 
                     status = 'idle' #Fall back to Idle status
@@ -605,10 +611,12 @@ class VacBot():
 
     @property
     def is_charging(self) -> bool:
+        _LOGGER.debug("is charging = {}".format(self.vacuum_status in CHARGING_STATES))
         return self.vacuum_status in CHARGING_STATES
 
     @property
     def is_cleaning(self) -> bool:
+        _LOGGER.debug("is cleaning = {}".format(self.clean_status in CLEANING_STATES))
         return self.clean_status in CLEANING_STATES
 
     def send_ping(self):
@@ -649,19 +657,20 @@ class VacBot():
 
     def refresh_components(self):
         try:
-            self.run(GetLifeSpan('main_brush'))
-            self.run(GetLifeSpan('side_brush'))
-            self.run(GetLifeSpan('filter'))
+            self.exc_command('getLifeSpan',[COMPONENT_TO_ECOVACS["main_brush"]])
+            self.exc_command('getLifeSpan',[COMPONENT_TO_ECOVACS["side_brush"]])
+            self.exc_command('getLifeSpan',[COMPONENT_TO_ECOVACS["filter"]])
         except XMPPError as err:
             _LOGGER.warning("Component refresh requests failed to reach VacBot. Will try again later.")
             _LOGGER.warning("*** Error type: " + err.etype)
             _LOGGER.warning("*** Error condition: " + err.condition)
 
+    
     def refresh_statuses(self):
         try:
-            self.run(GetCleanState())
-            self.run(GetChargeState())
-            self.run(GetBatteryState())
+            self.exc_command('getCleanInfo')
+            self.exc_command('getChargeState')
+            self.exc_command('getBattery')
         except XMPPError as err:
             _LOGGER.warning("Initial status requests failed to reach VacBot. Will try again on next ping.")
             _LOGGER.warning("*** Error type: " + err.etype)
@@ -671,15 +680,49 @@ class VacBot():
         self.refresh_statuses()
         self.refresh_components()
 
+	#Common ecovacs commands
+    def Clean(self, type='auto'):
+        self.exc_command('clean', {'act': CLEAN_ACTION_START,'type': type})
+        self.refresh_statuses()
+
+    def CleanPause(self):
+        self.exc_command('clean', {'act': CLEAN_ACTION_PAUSE})
+        self.refresh_statuses()
+
+    def CleanResume(self):
+        self.exc_command('clean', {'act': CLEAN_ACTION_RESUME})
+        self.refresh_statuses()
+
+    def Charge(self):
+        self.exc_command('charge', {'act': CHARGE_MODE_TO_ECOVACS['return']})
+        self.refresh_statuses()
+
+    def PlaySound(self):
+        self.exc_command('playSound', {'count': 1, 'sid': 30})
+
+    def Relocate(self):
+        self.exc_command('setRelocationState', {'mode': 'manu'})
+		
+    def SpotArea(self, area='', map_position='', cleanings=1):
+        if area != '': #For cleaning specified area
+            self.exc_command('clean', {'act': 'start', 'content': area, 'count': cleanings, 'type': 'spotArea'})
+            self.refresh_statuses()
+        elif map_position != '': #For cleaning custom map area, and specify deep amount 1x/2x
+            self.exc_command('clean', {'act': 'start', 'content': map_position, 'count': cleanings, 'type': 'customArea'})
+            self.refresh_statuses()
+        else:
+            #no valid entries
+            raise ValueError("must provide area or map_position for spotarea clean")
+		
+    def exc_command(self, action, params=None, **kwargs):
+        self.send_command(VacBotCommand(action, params))
+
     def send_command(self, action):
         if not self.vacuum['iotmq']:
             self.xmpp.send_command(action.to_xml(), self._vacuum_address()) 
         else:   
             #IOTMQ issues commands via RestAPI, and listens on MQTT for status updates         
             self.iotmq.send_command(action, self._vacuum_address())  #IOTMQ devices need the full action for additional parsing
-            
-    def run(self, action, **kwargs):
-        self.send_command(action)
 
     def disconnect(self, wait=False):        
         if not self.vacuum['iotmq']:
@@ -857,7 +900,7 @@ class EcoVacsIOTMQ(ClientMQTT):
             if 'debug' in json:
                 if json['debug'] == 'wait for response timed out': 
                     #TODO - Maybe handle timeout for IOT better in the future
-                    _LOGGER.error("call to iotdevmanager failed with {}".format(json))
+                    _LOGGER.warning("call to iotdevmanager failed with {}".format(json))
                     return {}
             else:
                 #TODO - Not sure if we want to raise an error yet, just return empty for now
@@ -914,9 +957,9 @@ class EcoVacsIOTMQ(ClientMQTT):
         if jsonstring['body']['msg'] == 'ok':
             eventname = action.name.replace("get","",1) 
             _LOGGER.debug('BEFORE Status:' + eventname.lower())
-            if 'clean' in eventname.lower():
+            if 'cleaninfo' in eventname.lower():
                 jsonstring['event'] = "clean_report"
-            elif 'charge' in eventname.lower():
+            elif 'chargestate' in eventname.lower():
                 jsonstring['event'] = "charge_state"
             elif 'battery' in eventname.lower():
                 jsonstring['event'] = "battery_info"
@@ -930,7 +973,10 @@ class EcoVacsIOTMQ(ClientMQTT):
             if jsonstring['body']['msg'] == 'fail':
                 if action.name == "charge": #So far only seen this with Charge, when already docked
                     jsonstring['event'] = "charge_state"
-        
+                return
+            else:
+                return
+
         _LOGGER.debug("LOGGED EVENT: " + jsonstring['event'])
         return jsonstring
 
@@ -1129,68 +1175,3 @@ class VacBotCommand:
         else:
             rtnobject.set(tag, conv_object)
         return rtnobject
-
-class Clean(VacBotCommand):
-    def __init__(self, type='auto'):
-        _LOGGER.debug("called Clean")
-        super().__init__('clean', {'act': CLEAN_ACTION_START,'type': type})
-
-class CleanPause(VacBotCommand):
-    def __init__(self):
-        _LOGGER.debug("called CleanPause")
-        super().__init__('clean', {'act':'pause'})
-		
-class CleanResume(VacBotCommand):
-    def __init__(self):
-        _LOGGER.debug("called CleanResume")
-        super().__init__('clean', {'act':'resume'})
-		
-class SpotArea(VacBotCommand):
-    def __init__(self, action='start', area='', map_position='', cleanings='1'):
-        _LOGGER.debug("called SpotArea")
-        if area != '': #For cleaning specified area
-            super().__init__('clean', {'act': 'start', 'content': area, 'count': cleanings, 'type': 'spotArea'})
-        elif map_position != '': #For cleaning custom map area, and specify deep amount 1x/2x
-            super().__init__('clean', {'act': 'start', 'content': map_position, 'count': cleanings, 'type': 'customArea'})
-        else:
-            #no valid entries
-            raise ValueError("must provide area or map_position for spotarea clean")
-
-class Charge(VacBotCommand):
-    def __init__(self):
-        _LOGGER.debug("called Charge")
-        super().__init__('charge', {'act':CHARGE_MODE_TO_ECOVACS['return']})
-
-class GetCleanState(VacBotCommand):
-    def __init__(self):
-        _LOGGER.debug("called GetCleanState")
-        super().__init__('getCleanInfo')
-
-class GetChargeState(VacBotCommand):
-    def __init__(self):
-        _LOGGER.debug("called GetChargeState")
-        super().__init__('getChargeState')
-
-class PlaySound(VacBotCommand):
-    def __init__(self):
-        _LOGGER.debug("called PlaySound")
-        super().__init__('playSound', {'count':1, 'sid': 30} )
-
-class SetRelocate(VacBotCommand):
-    def __init__(self):
-        _LOGGER.debug("called SetRelocate")
-        super().__init__('setRelocationState', {'mode':'manu'} )
-		
-class GetBatteryState(VacBotCommand):
-    def __init__(self):
-        _LOGGER.debug("called GetBatteryState")
-        super().__init__('getBattery')
-
-class GetLifeSpan(VacBotCommand):
-    def __init__(self, component):
-        _LOGGER.debug("called GetLifeSpan")
-        super().__init__('getLifeSpan',[COMPONENT_TO_ECOVACS[component]])
-
-class SetTime(VacBotCommand):
-    def __init__(self, timestamp, timezone):
-        super().__init__('SetTime', {'time': {'t': timestamp, 'tz': timezone}})

@@ -1,8 +1,9 @@
 """Support for Ecovacs Ecovacs Vaccums."""
+import asyncio
 import logging
-
-import deebotozmo
+import async_timeout
 import time
+from deebotozmo import *
 
 from homeassistant.components.vacuum import (
     SUPPORT_BATTERY,
@@ -38,13 +39,15 @@ ATTR_ERROR = "error"
 ATTR_COMPONENT_PREFIX = "component_"
 
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the Ecovacs vacuums."""
     vacuums = []
+
     for device in hass.data[ECOVACS_DEVICES]:
         vacuums.append(EcovacsVacuum(device))
     _LOGGER.debug("Adding Deebot Vacuums to Home Assistant: %s", vacuums)
-    add_entities(vacuums, True)
+	
+    async_add_entities(vacuums, True)
 
 
 class EcovacsVacuum(VacuumDevice):
@@ -122,13 +125,10 @@ class EcovacsVacuum(VacuumDevice):
         """Return the status of the vacuum cleaner."""
         return self.device.vacuum_status
 
-    def return_to_base(self, **kwargs):
+    async def async_return_to_base(self, **kwargs):
         """Set the vacuum cleaner to return to the dock."""
-        from deebotozmo import Charge
-        self.device.run(Charge())
-        time.sleep(5)
-        self.device.refresh_statuses()
-		
+        await self.hass.async_add_job(self.device.Charge)
+
     @property
     def battery_icon(self):
         """Return the battery icon for the vacuum cleaner."""
@@ -144,40 +144,31 @@ class EcovacsVacuum(VacuumDevice):
 
         return super().battery_level
 
-    def turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs):
         """Turn the vacuum on and start cleaning."""
-        from deebotozmo import Clean
-        self.device.run(Clean())
-        time.sleep(5)
-        self.device.refresh_statuses()
+        await self.hass.async_add_job(self.device.Clean)
 
-    def turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs):
         """Turn the vacuum off stopping the cleaning and returning home."""
-        self.return_to_base()
-		
-    def pause(self, **kwargs):
-        """Pause the vacuum cleaner."""
-        from deebotozmo import CleanPause
-        self.device.run(CleanPause())
-        time.sleep(5)
-        self.device.refresh_statuses()
-		
-    def start(self, **kwargs):
-        """Start the vacuum cleaner."""
-        from deebotozmo import CleanResume
-        self.device.run(CleanResume())
-        time.sleep(5)
-        self.device.refresh_statuses()
-		
-    def locate(self, **kwargs):
-        """Locate the vacuum cleaner."""
-        from deebotozmo import PlaySound
-        self.device.run(PlaySound())
+        await self.async_return_to_base()
 
-    def send_command(self, command, params=None, **kwargs):
-        from deebotozmo import VacBotCommand
+    async def async_pause(self):
+        """Pause the vacuum cleaner."""
+        await self.hass.async_add_job(self.device.CleanPause)
+
+    async def async_start(self):
+        """Start the vacuum cleaner."""
+        await self.hass.async_add_job(self.device.CleanResume)
+
+    async def async_locate(self, **kwargs):
+        """Locate the vacuum cleaner."""
+        await self.hass.async_add_job(self.device.Relocate)
+
+    async def async_send_command(self, command, params=None, **kwargs):
         """Send a command to a vacuum cleaner."""
-        self.device.run(VacBotCommand(command, params))
+        _LOGGER.debug("async_send_command %s (%s), %s", command, params, kwargs)
+        await self.hass.async_add_job(self.device.exc_command, command, params)
+        return True
 
     @property
     def device_state_attributes(self):

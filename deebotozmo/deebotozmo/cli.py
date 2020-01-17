@@ -205,7 +205,7 @@ def playsound():
 
 @cli.command(help='Charge State')
 def chargestate():
-    return CliAction(GetChargeState(), terminal=True, wait=StatusWait('charge_status', 'charging'))
+    return CliAction("getChargeState", terminal=True, wait=StatusWait('charge_status', 'charging'))
 
 @cli.command(help='Life Span')
 def lifespan():
@@ -251,9 +251,9 @@ def run(actions, debug):
 
         for action in actions:
             click.echo("performing " + str(action.vac_command))
-            vacbot.run(action.vac_command)
-            vacbot.request_all_statuses()
-            action.wait.wait(vacbot)
+            vacbot.refresh_statuses()
+            #vacbot.request_all_statuses()
+            #action.wait.wait(vacbot)
         vacbot.disconnect(wait=True)
 		
         _LOGGER.debug("is_charging: {}".format(vacbot.is_charging))
