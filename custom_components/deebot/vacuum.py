@@ -6,18 +6,23 @@ import time
 from deebotozmo import *
 
 from homeassistant.components.vacuum import (
+    STATE_CLEANING,
+    STATE_DOCKED,
+    STATE_ERROR,
+    STATE_IDLE,
+    STATE_PAUSED,
+    STATE_RETURNING,
     SUPPORT_BATTERY,
+    SUPPORT_FAN_SPEED,
     SUPPORT_LOCATE,
+    SUPPORT_PAUSE,
     SUPPORT_RETURN_HOME,
     SUPPORT_SEND_COMMAND,
-    SUPPORT_STATUS,
-    SUPPORT_TURN_OFF,
-    SUPPORT_TURN_ON,
     SUPPORT_START,
-    SUPPORT_PAUSE,
+    SUPPORT_STATE,
+    SUPPORT_STOP,
     VacuumDevice,
 )
-from homeassistant.helpers.icon import icon_for_battery_level
 
 from . import ECOVACS_DEVICES
 
@@ -25,15 +30,24 @@ _LOGGER = logging.getLogger(__name__)
 
 SUPPORT_ECOVACS = (
     SUPPORT_BATTERY
-    | SUPPORT_RETURN_HOME
-    | SUPPORT_TURN_OFF
-    | SUPPORT_TURN_ON
+    | SUPPORT_FAN_SPEED
     | SUPPORT_LOCATE
-    | SUPPORT_STATUS
+    | SUPPORT_PAUSE
+    | SUPPORT_RETURN_HOME
     | SUPPORT_SEND_COMMAND
     | SUPPORT_START
-    | SUPPORT_PAUSE
+    | SUPPORT_STATE
+    | SUPPORT_STOP
 )
+
+STATE_CODE_TO_STATE = {
+    'STATE_IDLE': STATE_IDLE,
+    'STATE_CLEANING': STATE_CLEANING,
+    'STATE_RETURNING': STATE_RETURNING,
+    'STATE_DOCKED': STATE_DOCKED,
+    'STATE_ERROR': STATE_ERROR,
+    'STATE_PAUSED': STATE_PAUSED,
+}
 
 ATTR_ERROR = "error"
 ATTR_COMPONENT_PREFIX = "component_"
@@ -72,6 +86,7 @@ class EcovacsVacuum(VacuumDevice):
         self.device.statusEvents.subscribe(lambda _: self.schedule_update_ha_state())
         self.device.batteryEvents.subscribe(lambda _: self.schedule_update_ha_state())
         self.device.lifespanEvents.subscribe(lambda _: self.schedule_update_ha_state())
+        self.device.fanspeedEvents.subscribe(self.on_fan_change)
         self.device.errorEvents.subscribe(self.on_error)
 
     def on_error(self, error):
@@ -89,7 +104,11 @@ class EcovacsVacuum(VacuumDevice):
             "ecovacs_error", {"entity_id": self.entity_id, "error": error}
         )
         self.schedule_update_ha_state()
-
+		
+    def on_fan_change(self, fan_speed):
+        self._fan_speed = fan_speed
+        self.schedule_update_ha_state()
+		
     @property
     def should_poll(self) -> bool:
         """Return True if entity has to be polled for state."""
@@ -99,16 +118,6 @@ class EcovacsVacuum(VacuumDevice):
     def unique_id(self) -> str:
         """Return an unique ID."""
         return self.device.vacuum.get("did", None)
-
-    @property
-    def is_on(self):
-        """Return true if vacuum is currently cleaning."""
-        return self.device.is_cleaning
-
-    @property
-    def is_charging(self):
-        """Return true if vacuum is currently charging."""
-        return self.device.is_charging
 
     @property
     def name(self):
@@ -121,20 +130,23 @@ class EcovacsVacuum(VacuumDevice):
         return SUPPORT_ECOVACS
 
     @property
-    def status(self):
-        """Return the status of the vacuum cleaner."""
+    def state(self):
+        """Return the state of the vacuum cleaner."""
+        try:
+            return STATE_CODE_TO_STATE[self.device.vacuum_status]
+        except KeyError:
+            _LOGGER.error("STATE not supported: %s", self.device.vacuum_status)
+            return None
         return self.device.vacuum_status
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return self.device.is_available
 
     async def async_return_to_base(self, **kwargs):
         """Set the vacuum cleaner to return to the dock."""
         await self.hass.async_add_job(self.device.Charge)
-
-    @property
-    def battery_icon(self):
-        """Return the battery icon for the vacuum cleaner."""
-        return icon_for_battery_level(
-            battery_level=self.battery_level, charging=self.is_charging
-        )
 
     @property
     def battery_level(self):
@@ -144,13 +156,18 @@ class EcovacsVacuum(VacuumDevice):
 
         return super().battery_level
 
-    async def async_turn_on(self, **kwargs):
-        """Turn the vacuum on and start cleaning."""
-        await self.hass.async_add_job(self.device.Clean)
+    @property
+    def fan_speed(self):
+        """Return the fan speed of the vacuum cleaner."""
+        return self._fan_speed
 
-    async def async_turn_off(self, **kwargs):
-        """Turn the vacuum off stopping the cleaning and returning home."""
-        await self.async_return_to_base()
+    async def async_set_fan_speed(self, fan_speed, **kwargs):
+        await self.hass.async_add_job(self.device.SetFanSpeed, fan_speed)
+
+    @property
+    def fan_speed_list(self):
+        """Get the list of available fan speed steps of the vacuum cleaner."""
+        return [FAN_SPEED_QUIET, FAN_SPEED_NORMAL, FAN_SPEED_MAX, FAN_SPEED_MAXPLUS]
 
     async def async_pause(self):
         """Pause the vacuum cleaner."""

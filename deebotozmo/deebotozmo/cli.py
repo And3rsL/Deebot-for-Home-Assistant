@@ -165,75 +165,58 @@ def login(email, password, country_code, continent_code, verify_ssl):
     exit(0)
 
 
-@cli.command(help='auto-cleans for the specified number of minutes, if minutes is 0 auto clean until bot returns to charger by itself')
-@click.option('--frequency', '-f', type=FREQUENCY, help='frequency with which to run; e.g. 0.5 or 3/7')
-@click.argument('minutes', type=click.FLOAT)
-def clean(frequency, minutes):
+@cli.command(help='auto clean until bot returns to charger by itself')
+def clean():
     waiter = StatusWait('charge_status', 'charging')    
-    if minutes > 0:
-        waiter = TimeWait(minutes * 60)
-
-    if should_run(frequency):
-        return CliAction(Clean(), wait=waiter)
-
-
-@cli.command(help='cleans room edges for the specified number of minutes')
-@click.option('--frequency', '-f', type=FREQUENCY, help='frequency with which to run; e.g. 0.5 or 3/7')
-@click.argument('minutes', type=click.FLOAT)
-def edge(frequency, minutes):
-    if should_run(frequency):
-        return CliAction(Edge(), wait=TimeWait(minutes * 60))
-
+    return CliAction('clean', {'act': 'go','type': 'auto'}, wait=waiter)
 
 @cli.command(help='cleans provided area(s), ex: "0,1"',context_settings={"ignore_unknown_options": True}) #ignore_unknown for map coordinates with negatives
 @click.option("--map-position","-p", is_flag=True, help='clean provided map position instead of area, ex: "-602,1812,800,723"')
 @click.argument('area', type=click.STRING, required=True)
 def area(area, map_position):
     if map_position:
-        return CliAction(SpotArea('start', map_position=area), wait=StatusWait('charge_status', 'returning'))    
+        return CliAction('clean', {'act': 'start', 'content': area, 'count': 1, 'type': 'spotArea'}, wait=StatusWait('charge_status', 'returning'))    
     else:
-        return CliAction(SpotArea('start', area=area), wait=StatusWait('charge_status', 'returning'))
+        return CliAction('clean', {'act': 'start', 'content': area, 'count': 1, 'type': 'customArea'}, wait=StatusWait('charge_status', 'returning'))
     
-
-@cli.command(help='returns to charger')
+@cli.command(help='Set Clean Speed')
+@click.argument('speed', type=click.STRING, required=True)
+def setfanspeed(speed):
+    return CliAction('setSpeed', {'speed': speed}, terminal=False)    
+    
+@cli.command(help='Returns to charger')
 def charge():
-    return CliAction(GetCleanState(), terminal=False, wait=StatusWait('clean_status', 'working'))
+    return CliAction('charge', {'act': 'go'}, terminal=False, wait=StatusWait('clean_status', 'working'))
 
 @cli.command(help='Play welcome sound')
 def playsound():
-    return CliAction(PlaySound(), terminal=False)
+    return CliAction("playSound", terminal=False)
 
 @cli.command(help='Charge State')
 def chargestate():
     return CliAction("getChargeState", terminal=True, wait=StatusWait('charge_status', 'charging'))
 
-@cli.command(help='Life Span')
-def lifespan():
-    return CliAction(GetLifeSpan('main_brush'), terminal=False, wait=StatusWait('life_span','charging'))
+@cli.command(help='Get Fan Speed')
+def fanspeed():
+    return CliAction("getSpeed", terminal=False)
 
 @cli.command(help='Battery State')
 def batterystate():
-    return CliAction(GetBatteryState(), terminal=False)
+    return CliAction("getBatteryState", terminal=False)
 	
-@cli.command(help='resume the robot')
+@cli.command(help='pause the robot')
 def pause():
-    return CliAction(CleanPause(), terminal=True, wait=StatusWait('vacuum_status', 'pause'))
-	
+    return CliAction('clean', {'act': 'pause'}, terminal=True, wait=StatusWait('vacuum_status', 'pause'))
+
 @cli.command(help='resume the robot')
 def resume():
-    return CliAction(CleanResume(), terminal=True, wait=StatusWait('vacuum_status', 'working'))
-	
-@cli.command(help='stops the robot in its current position')
-def stop():
-    return CliAction(Stop(), terminal=True, wait=StatusWait('clean_status', 'stop'))
-
+    return CliAction('clean', {'act': 'resume'}, terminal=True, wait=StatusWait('vacuum_status', 'working'))
 
 @cli.resultcallback()
 def run(actions, debug):
     actions = list(filter(None.__ne__, actions))
-    if actions and charge and not actions[-1].terminal:
-        actions.append(charge_action())
-
+	
+	
     if not config_file_exists():
         click.echo("Not logged in. Do 'click login' first.")
         exit(1)
@@ -251,15 +234,12 @@ def run(actions, debug):
 
         for action in actions:
             click.echo("performing " + str(action.vac_command))
+            vacbot.SetFanSpeed('normal')
             vacbot.refresh_statuses()
             #vacbot.request_all_statuses()
             #action.wait.wait(vacbot)
         vacbot.disconnect(wait=True)
 		
-        _LOGGER.debug("is_charging: {}".format(vacbot.is_charging))
-        _LOGGER.debug("is_cleaning: {}".format(vacbot.is_cleaning))
-        _LOGGER.debug("Clean Status: {}".format(vacbot.clean_status))
-        _LOGGER.debug("Charge Status: {}".format(vacbot.charge_status))
         _LOGGER.debug("Battery Status: {}".format(vacbot.battery_status))
         _LOGGER.debug("Vacuum Status: {}".format(vacbot.vacuum_status))
         _LOGGER.debug("Fan Speed: {}".format(vacbot.fan_speed))
