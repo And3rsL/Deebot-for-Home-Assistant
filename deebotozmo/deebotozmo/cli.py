@@ -4,6 +4,9 @@ import os
 import platform
 import random
 import re
+import base64
+import lzma
+import json
 
 import click
 from pycountry_convert import country_alpha2_to_continent_code
@@ -212,6 +215,24 @@ def pause():
 def resume():
     return CliAction('clean', {'act': 'resume'}, terminal=True, wait=StatusWait('vacuum_status', 'working'))
 
+@cli.command(help='test')
+def test():
+    # Get lzma output size (as done by the Android app)
+    b64 = 'XQAABADoAwAAACe/wY/wAXMtXB0BRTG11RZpNoaJR3MvphcOqp7H+VtmwqLso+xJ2eOQbM2BbszF/pf0VLYbvS322TQoShcj+T1BzPcmRuNKAMD0nAnkVFFpla5ipwEkkUmVAeGeJjf1PdlnmizSbezkr4XlZQ/1WD2INmfUaWwr1Q6lyOih3j8bgMiPPvmpHpTPaf3vAOLUOMcn26qq09zKDzN/lmJyzA40tdtbLYKV6Mbj+sAjfWxqjYcqn55Hst5mflAY4c11DWkuDX+72WXuyAp8CsDQ5UdSLroZyuJgVg4Y8V9l+hNiwmYr+EFt4GJL+0InTF2V38EMLWq5yYHiBtuXJNOEct6RPPloVVIARyJr1s8/LC36KlOCEz65Owl9bNlzV2WF1WrnSwXiLAJTt7F3owFcRYVuL98RJHXrDRLhQfrYZgJALVL1QXrCbXS+2sYx6itLUoQ6lUUQlvt68zTXhdCEzTPWyzVddWd6ntogUlyNq8ZnKUpa2RU0G5MIaG1OOIi6saBcmHn45TyR0TGsPsfYiXCTctFMoCavQzwoGurEtqNgNlVv1nFiFyVRw9EJrgExVH5qQplQjCZt3HJZPrD4+7UfIX21rzsgcy/Fv+Lr3YkFfdbQLlYi213TjVGS+HhHRZ1E/Dcc5dvO4fwn9N8V0JcYKo3c/BgrLcti9KAPfwOMRvnMI4yFQWcU1AxkjgwBZzf8Qbtj5sWDzrxz+Ki1NIJRHv/pBJSRxzJBdsmMtfvfce1EGet8GjkCJFKh22mP48Hdvh9nlrUEY9rnFVy5Ow2PFrRIxA1XmWupmcFLXDU='
+    b64 = b64[0].upper() + b64[1:]
+    data = base64.b64decode(b64)
+    _LOGGER.debug(data)
+    len_array = data[5:5+4]
+    len_value = ((len_array[0] & 0xFF) | (len_array[1] << 8 & 0xFF00) | (len_array[2] << 16 & 0xFF0000) | (len_array[3] << 24 & 0xFF000000)) 
+
+    # Init the LZMA decompressor using the lzma header
+    dec = lzma.LZMADecompressor(lzma.FORMAT_RAW, None, [lzma._decode_filter_properties(lzma.FILTER_LZMA1, data[0:5])])
+        
+    # Decompress the lzma stream to get raw data
+    val = dec.decompress(data[9:], len_value)
+    base64EncodedStr = base64.b64encode(val)
+    _LOGGER.debug(base64EncodedStr)
+	
 @cli.resultcallback()
 def run(actions, debug):
     actions = list(filter(None.__ne__, actions))
@@ -234,7 +255,7 @@ def run(actions, debug):
 
         for action in actions:
             click.echo("performing " + str(action.vac_command))
-            vacbot.SetFanSpeed('normal')
+            #vacbot.SetFanSpeed('normal')
             vacbot.refresh_statuses()
             #vacbot.request_all_statuses()
             #action.wait.wait(vacbot)

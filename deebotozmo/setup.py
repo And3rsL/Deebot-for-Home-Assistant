@@ -10,7 +10,7 @@ long_description = ''
 
 setup(
     name='deebotozmo',
-    version='1.2.0',
+    version='1.2.1',
 
     description='a library for controlling certain robot vacuums [SUCKS FORK]',
     long_description=long_description,

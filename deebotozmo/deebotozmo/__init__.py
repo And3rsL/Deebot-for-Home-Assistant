@@ -485,7 +485,7 @@ class VacBot():
 
     def _handle_charge_state(self, event):
         response = event['body']
-        
+        status = 'none'
         if response['code'] == 0:
             if response['data']['isCharging'] == 1:
                 status = 'STATE_DOCKED'
@@ -497,12 +497,12 @@ class VacBot():
             elif response['msg'] == 'fail' and response['code'] == '3': #Bot in stuck state, example dust bin out
                 status = 'STATE_ERROR'
             else: 
-                _LOGGER.error("Unknown charging status '" + event['errno'] + "'") #Log this so we can identify more errors    
+                _LOGGER.error("Unknown charging status '" + response['code'] + "'") #Log this so we can identify more errors    
 
-        if status != '':
+        if status != 'none':
             self.vacuum_status = status
             self.statusEvents.notify(self.vacuum_status)
-        _LOGGER.debug("*** vacuum_status = " + self.vacuum_status)
+            _LOGGER.debug("*** vacuum_status = " + self.vacuum_status)
 
     def _vacuum_address(self):
         return self.vacuum['did'] #IOTMQ only uses the did

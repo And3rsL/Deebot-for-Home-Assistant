@@ -20,7 +20,6 @@ from homeassistant.components.vacuum import (
     SUPPORT_SEND_COMMAND,
     SUPPORT_START,
     SUPPORT_STATE,
-    SUPPORT_STOP,
     VacuumDevice,
 )
 
@@ -37,7 +36,6 @@ SUPPORT_ECOVACS = (
     | SUPPORT_SEND_COMMAND
     | SUPPORT_START
     | SUPPORT_STATE
-    | SUPPORT_STOP
 )
 
 STATE_CODE_TO_STATE = {
@@ -179,7 +177,7 @@ class EcovacsVacuum(VacuumDevice):
 
     async def async_locate(self, **kwargs):
         """Locate the vacuum cleaner."""
-        await self.hass.async_add_job(self.device.Relocate)
+        await self.hass.async_add_job(self.device.PlaySound)
 
     async def async_send_command(self, command, params=None, **kwargs):
         """Send a command to a vacuum cleaner."""
