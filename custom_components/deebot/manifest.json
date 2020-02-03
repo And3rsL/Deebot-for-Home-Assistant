@@ -1,0 +1,11 @@
+{
+  "domain": "deebot",
+  "name": "deebot vacuum 950 Custom",
+  "documentation": "https://github.com/And3rsL/Deebot-for-hassio",
+  "requirements": [
+    "deebotozmo==1.2.1"
+  ],
+  "dependencies": [],
+  "codeowners": ["@And3rsL"],
+  "homeassistant": "0.99.3"
+}
