@@ -1,5 +1,8 @@
 Home Assistant Custom Component for Ecovacs Deebot Ozmo 950
 
+![Preview](prev.jpg)
+Format: ![Alt Text](url)
+
 With this Home Assistant Custom Component you'll be able to 
 * play/pause
 * locate
