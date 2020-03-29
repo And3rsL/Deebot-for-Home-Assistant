@@ -1,11 +1,29 @@
-"""Support for Ecovacs Ecovacs Vaccums."""
+"""Support for Deebot Vaccums."""
 import asyncio
 import logging
 import async_timeout
 import time
+import random
+import string
+import voluptuous as vol
+import homeassistant.helpers.config_validation as cv
 from deebotozmo import *
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
+
+REQUIREMENTS = ['deebotozmo==1.2.5']
+
+CONF_COUNTRY = "country"
+CONF_CONTINENT = "continent"
+CONF_DEVICEID = "deviceid"
+DEEBOT_DEVICES = "deebot_devices"
+
+# Generate a random device ID on each bootup
+DEEBOT_API_DEVICEID = "".join(
+    random.choice(string.ascii_uppercase + string.digits) for _ in range(8)
+)
 
 from homeassistant.components.vacuum import (
+    PLATFORM_SCHEMA,
     STATE_CLEANING,
     STATE_DOCKED,
     STATE_ERROR,
@@ -23,11 +41,9 @@ from homeassistant.components.vacuum import (
     VacuumDevice,
 )
 
-from . import ECOVACS_DEVICES
-
 _LOGGER = logging.getLogger(__name__)
 
-SUPPORT_ECOVACS = (
+SUPPORT_DEEBOT = (
     SUPPORT_BATTERY
     | SUPPORT_FAN_SPEED
     | SUPPORT_LOCATE
@@ -36,6 +52,17 @@ SUPPORT_ECOVACS = (
     | SUPPORT_SEND_COMMAND
     | SUPPORT_START
     | SUPPORT_STATE
+)
+
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
+    {
+        vol.Required(CONF_USERNAME): cv.string,
+        vol.Required(CONF_PASSWORD): cv.string,
+        vol.Required(CONF_COUNTRY): vol.All(vol.Lower, cv.string),
+        vol.Required(CONF_CONTINENT): vol.All(vol.Lower, cv.string),
+        vol.Required(CONF_DEVICEID): cv.string,
+    },
+    extra=vol.ALLOW_EXTRA,
 )
 
 STATE_CODE_TO_STATE = {
@@ -47,26 +74,49 @@ STATE_CODE_TO_STATE = {
     'STATE_PAUSED': STATE_PAUSED,
 }
 
-ATTR_ERROR = "error"
 ATTR_COMPONENT_PREFIX = "component_"
 
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Set up the Ecovacs vacuums."""
+    """Set up the Deebot vacuums."""
     vacuums = []
 
-    for device in hass.data[ECOVACS_DEVICES]:
-        vacuums.append(EcovacsVacuum(device))
-    _LOGGER.debug("Adding Deebot Vacuums to Home Assistant: %s", vacuums)
-	
-    async_add_entities(vacuums, True)
+    if DEEBOT_DEVICES not in hass.data:
+        hass.data[DEEBOT_DEVICES] = []
 
+    # Setting up API credentials
+    ecovacs_api = EcoVacsAPI(
+        DEEBOT_API_DEVICEID,
+        config.get(CONF_USERNAME),
+        EcoVacsAPI.md5(config.get(CONF_PASSWORD)),
+        config.get(CONF_COUNTRY),
+        config.get(CONF_CONTINENT),
+    )
 
-class EcovacsVacuum(VacuumDevice):
-    """Ecovacs Vacuums such as Deebot."""
+    # GET DEVICES
+    devices = ecovacs_api.devices()
+
+    # CREATE VACBOT FOR EACH DEVICE
+    for device in devices:
+        if device['name'] == config.get(CONF_DEVICEID):
+            vacbot = VacBot(
+                ecovacs_api.uid,
+                ecovacs_api.REALM,
+                ecovacs_api.resource,
+                ecovacs_api.user_access_token,
+                device,
+                config.get(CONF_CONTINENT).lower(),
+                monitor=False,
+            )
+            hass.data[DEEBOT_DEVICES].append(vacbot)
+            vacuums.append(DeebotVacuum(vacbot))
+            async_add_entities(vacuums, True)
+
+class DeebotVacuum(VacuumDevice):
+    """Deebot Vacuums"""
 
     def __init__(self, device):
-        """Initialize the Ecovacs Vacuum."""
+        """Initialize the Deebot Vacuum."""
         self.device = device
         self.device.connect_and_wait_until_ready()
         if self.device.vacuum.get("nick", None) is not None:
@@ -76,41 +126,16 @@ class EcovacsVacuum(VacuumDevice):
             self._name = "{}".format(self.device.vacuum["did"])
 
         self._fan_speed = None
-        self._error = None
+
         _LOGGER.debug("Vacuum initialized: %s", self.name)
 
-    async def async_added_to_hass(self) -> None:
-        """Set up the event listeners now that hass is ready."""
-        self.device.statusEvents.subscribe(lambda _: self.schedule_update_ha_state())
-        self.device.batteryEvents.subscribe(lambda _: self.schedule_update_ha_state())
-        self.device.lifespanEvents.subscribe(lambda _: self.schedule_update_ha_state())
-        self.device.fanspeedEvents.subscribe(self.on_fan_change)
-        self.device.errorEvents.subscribe(self.on_error)
-
-    def on_error(self, error):
-        """Handle an error event from the robot.
-
-        This will not change the entity's state. If the error caused the state
-        to change, that will come through as a separate on_status event
-        """
-        if error == "no_error":
-            self._error = None
-        else:
-            self._error = error
-
-        self.hass.bus.fire(
-            "ecovacs_error", {"entity_id": self.entity_id, "error": error}
-        )
-        self.schedule_update_ha_state()
-		
     def on_fan_change(self, fan_speed):
         self._fan_speed = fan_speed
-        self.schedule_update_ha_state()
 		
     @property
     def should_poll(self) -> bool:
         """Return True if entity has to be polled for state."""
-        return False
+        return True
 
     @property
     def unique_id(self) -> str:
@@ -125,7 +150,7 @@ class EcovacsVacuum(VacuumDevice):
     @property
     def supported_features(self):
         """Flag vacuum cleaner robot features that are supported."""
-        return SUPPORT_ECOVACS
+        return SUPPORT_DEEBOT
 
     @property
     def state(self):
@@ -144,7 +169,7 @@ class EcovacsVacuum(VacuumDevice):
 
     async def async_return_to_base(self, **kwargs):
         """Set the vacuum cleaner to return to the dock."""
-        await self.hass.async_add_job(self.device.Charge)
+        await self.hass.async_add_executor_job(self.device.Charge)
 
     @property
     def battery_level(self):
@@ -157,10 +182,10 @@ class EcovacsVacuum(VacuumDevice):
     @property
     def fan_speed(self):
         """Return the fan speed of the vacuum cleaner."""
-        return self._fan_speed
+        return self.device.fan_speed
 
     async def async_set_fan_speed(self, fan_speed, **kwargs):
-        await self.hass.async_add_job(self.device.SetFanSpeed, fan_speed)
+        await self.hass.async_add_executor_job(self.device.SetFanSpeed, fan_speed)
 
     @property
     def fan_speed_list(self):
@@ -169,30 +194,37 @@ class EcovacsVacuum(VacuumDevice):
 
     async def async_pause(self):
         """Pause the vacuum cleaner."""
-        await self.hass.async_add_job(self.device.CleanPause)
+        await self.hass.async_add_executor_job(self.device.CleanPause)
 
     async def async_start(self):
         """Start the vacuum cleaner."""
-        await self.hass.async_add_job(self.device.CleanResume)
+        await self.hass.async_add_executor_job(self.device.CleanResume)
 
     async def async_locate(self, **kwargs):
         """Locate the vacuum cleaner."""
-        await self.hass.async_add_job(self.device.PlaySound)
+        await self.hass.async_add_executor_job(self.device.PlaySound)
 
     async def async_send_command(self, command, params=None, **kwargs):
         """Send a command to a vacuum cleaner."""
         _LOGGER.debug("async_send_command %s (%s), %s", command, params, kwargs)
-        await self.hass.async_add_job(self.device.exc_command, command, params)
+        await self.hass.async_add_executor_job(self.device.exc_command, command, params)
         return True
+
+    async def async_update(self):
+        """Fetch state from the device."""
+        await self.hass.async_add_executor_job(self.device.request_all_statuses)
+        await self.hass.async_add_executor_job(self.device.GetMap)
 
     @property
     def device_state_attributes(self):
         """Return the device-specific state attributes of this vacuum."""
         data = {}
-        data[ATTR_ERROR] = self._error
 
         for key, val in self.device.components.items():
             attr_name = ATTR_COMPONENT_PREFIX + key
             data[attr_name] = int(val)
+
+        for v in self.device.rooms:
+            data[v['subtype']] = v['id']
 
         return data

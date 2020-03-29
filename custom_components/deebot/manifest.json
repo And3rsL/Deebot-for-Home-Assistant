@@ -3,7 +3,7 @@
   "name": "deebot vacuum 950 Custom",
   "documentation": "https://github.com/And3rsL/Deebot-for-hassio",
   "requirements": [
-    "deebotozmo==1.2.2"
+    "deebotozmo==1.2.5"
   ],
   "dependencies": [],
   "codeowners": ["@And3rsL"],
