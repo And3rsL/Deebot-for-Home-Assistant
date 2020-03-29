@@ -32,7 +32,7 @@ to make things easy i added a list of current saved rooms under robot date
 
 Example to clean Bathroom and Kids Room:
 
----
+```
 # Clean Area
 entity_id: vacuum.ambrogio
 command: clean
@@ -41,4 +41,4 @@ params:
   content: 10,14
   count: 1
   type: 'spotArea'
-``` 
+```
