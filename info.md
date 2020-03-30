@@ -25,8 +25,8 @@ You can find your robot id under settings and "About Deebot"
 
 ![Preview](deviceid.jpg)
 
-You can clean certain area by specify it in CONTENT section (see blow example)
-to make things easy i added a list of current saved rooms under robot date
+You can clean certain area by specify it in ROOMS section (see below example)
+to make things easy i added a list of current saved rooms under robot attributes
 
 ![Preview](cleanarea.JPG)
 
@@ -35,10 +35,29 @@ Example to clean Bathroom and Kids Room:
 ```
 # Clean Area
 entity_id: vacuum.ambrogio
-command: clean
+command: spot_area
 params:
-  act: 'start'
-  content: 10,14
-  count: 1
-  type: 'spotArea'
+  rooms: 10,14
+  cleanings: 1
+```
+
+```
+# Customize Clean
+# You can get coordinates with fiddler and the official APP [Advance User]
+entity_id: vacuum.ambrogio
+command: custom_area
+params:
+  coordinates: -1339,-1511,296,-2587
+  cleanings: 1
+```
+
+```
+# Set Water Level
+Possible amount values: low|medium|high|ultrahigh
+example:
+
+entity_id: vacuum.ambrogio
+command: set_water
+params:
+  amount: ultrahigh
 ```

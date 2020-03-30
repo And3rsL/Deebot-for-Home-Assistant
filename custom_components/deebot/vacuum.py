@@ -10,7 +10,7 @@ import homeassistant.helpers.config_validation as cv
 from deebotozmo import *
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
 
-REQUIREMENTS = ['deebotozmo==1.2.5']
+REQUIREMENTS = ['deebotozmo==1.2.8']
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
@@ -207,24 +207,38 @@ class DeebotVacuum(VacuumDevice):
     async def async_send_command(self, command, params=None, **kwargs):
         """Send a command to a vacuum cleaner."""
         _LOGGER.debug("async_send_command %s (%s), %s", command, params, kwargs)
+        
+        if command == 'spot_area':
+            return self.device.SpotArea(params['rooms'], params['cleanings'])
+
+        if command == 'custom_area':
+            return self.device.CustomArea(params['coordinates'], params['cleanings'])
+
+        if command == 'set_water':
+            return self.device.SetWaterLevel(params['amount'])
+
         await self.hass.async_add_executor_job(self.device.exc_command, command, params)
-        return True
 
     async def async_update(self):
         """Fetch state from the device."""
         await self.hass.async_add_executor_job(self.device.request_all_statuses)
-        await self.hass.async_add_executor_job(self.device.GetMap)
 
     @property
     def device_state_attributes(self):
         """Return the device-specific state attributes of this vacuum."""
         data = {}
 
+        data['water_level'] = self.device.water_level
+
         for key, val in self.device.components.items():
             attr_name = ATTR_COMPONENT_PREFIX + key
             data[attr_name] = int(val)
 
+        i = 0
         for v in self.device.rooms:
-            data[v['subtype']] = v['id']
-
+            ke = str(i) + '_' + v['subtype']
+            data[ke] = v['id']
+            i = i+1
+        
+        data['last_clean_image'] = self.device.last_clean_image
         return data
