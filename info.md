@@ -1,4 +1,4 @@
-Home Assistant Custom Component for Ecovacs Deebot Ozmo 950/920
+Home Assistant Custom Component for Ecovacs Deebot Ozmo 960/950/920
 
 ![Preview](prev.jpg)
 

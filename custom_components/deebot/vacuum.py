@@ -10,7 +10,7 @@ import homeassistant.helpers.config_validation as cv
 from deebotozmo import *
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
 
-REQUIREMENTS = ['deebotozmo==1.2.8']
+REQUIREMENTS = ['deebotozmo==1.2.9']
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
