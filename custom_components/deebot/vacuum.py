@@ -228,6 +228,7 @@ class DeebotVacuum(VacuumDevice):
         """Return the device-specific state attributes of this vacuum."""
         data = {}
 
+        data['robot_status'] = STATE_CODE_TO_STATE[self.device.vacuum_status]
         data['water_level'] = self.device.water_level
 
         for key, val in self.device.components.items():
