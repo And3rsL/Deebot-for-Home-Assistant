@@ -11,7 +11,7 @@ from deebotozmo import *
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
 import base64
 
-REQUIREMENTS = ['deebotozmo==1.4.8']
+REQUIREMENTS = ['deebotozmo==1.4.9']
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
@@ -78,7 +78,6 @@ STATE_CODE_TO_STATE = {
 }
 
 ATTR_COMPONENT_PREFIX = "component_"
-LIVE_MAP_PATH = "www/live_map.png"
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up the Deebot vacuums."""
@@ -97,7 +96,6 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     )
 
     continent = config.get(CONF_CONTINENT).lower()
-    LIVE_MAP_PATH = config.get(CONF_LIVEMAPPATH)
 
     # GET DEVICES
     devices = ecovacs_api.devices()
@@ -116,13 +114,13 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
             )
 
             hass.data[DEEBOT_DEVICES].append(vacbot)
-            vacuums.append(DeebotVacuum(vacbot))
+            vacuums.append(DeebotVacuum(config, vacbot))
             add_entities(vacuums, True)
 
 class DeebotVacuum(VacuumDevice):
     """Deebot Vacuums"""
 
-    def __init__(self, device):
+    def __init__(self,config, device):
         """Initialize the Deebot Vacuum."""
         self.device = device
         self.device.connect_and_wait_until_ready()
@@ -134,6 +132,7 @@ class DeebotVacuum(VacuumDevice):
 
         self._fan_speed = None
         self._live_map = None
+        self._live_map_path = config.get(CONF_LIVEMAPPATH)
 
         _LOGGER.debug("Vacuum initialized: %s", self.name)
 
@@ -263,9 +262,12 @@ class DeebotVacuum(VacuumDevice):
         
         data['last_clean_image'] = self.device.last_clean_image
 
-        if(self._live_map != self.device.live_map):
-            self._live_map = self.device.live_map
-            with open(LIVE_MAP_PATH, "wb") as fh:
-                fh.write(base64.decodebytes(self.device.live_map))
+        try:
+            if(self._live_map != self.device.live_map):
+                self._live_map = self.device.live_map
+                with open(self._live_map_path, "wb") as fh:
+                    fh.write(base64.decodebytes(self.device.live_map))
+        except KeyError:
+            _LOGGER.warning("Can't access local folder: %s", LIVE_MAP_PATH)
 
         return data
