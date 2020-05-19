@@ -1,4 +1,4 @@
-Home Assistant Custom Component for Ecovacs Deebot Ozmo 960/950/920
+#Home Assistant Custom Component for Ecovacs Deebot Ozmo 960/950/920
 
 ![Preview](prev.jpg)
 
@@ -7,6 +7,7 @@ With this Home Assistant Custom Component you'll be able to
 * locate
 * send to home
 * clean[auto|map|area]
+* track live map
 
 You can use it with this configuration
 
@@ -19,6 +20,7 @@ vacuum:
     country: YOUR_TWO_LETTER_COUNTRY_CODE
     continent: YOUR_TWO_LETTER_CONTINENT_CODE
     deviceid: YOUR_ROBOT_ID
+    livemappath: 'www/live_map.png'
 ``` 
 
 You can find your robot id under settings and "About Deebot"
@@ -30,7 +32,28 @@ to make things easy i added a list of current saved rooms under robot attributes
 
 ![Preview](cleanarea.JPG)
 
-Example to clean Bathroom and Kids Room:
+##Live Map:
+
+Add Camera in configuration.yaml
+
+```
+camera:
+  - platform: generic
+    name: Deebot_live_map
+    still_image_url: "http://YOURLOCALIP:8123/local/live_map.png" #Example configuration for livemappath: 'www/live_map.png'
+    verify_ssl: false
+```
+
+yaml component:
+```
+type: picture-entity
+entity: vacuum.ambrogio
+aspect_ratio: 50%
+camera_image: camera.deebot_live_map
+```
+
+
+##Example commands:
 
 ```
 # Clean Area
@@ -60,4 +83,15 @@ entity_id: vacuum.ambrogio
 command: set_water
 params:
   amount: ultrahigh
+```
+
+```
+# Clean
+Possible values: auto
+example:
+
+entity_id: vacuum.ambrogio
+command: clean
+params:
+  type: auto
 ```

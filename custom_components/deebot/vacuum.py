@@ -9,12 +9,14 @@ import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 from deebotozmo import *
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
+import base64
 
-REQUIREMENTS = ['deebotozmo==1.2.9']
+REQUIREMENTS = ['deebotozmo==1.4.8']
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
 CONF_DEVICEID = "deviceid"
+CONF_LIVEMAPPATH = "livemappath"
 DEEBOT_DEVICES = "deebot_devices"
 
 # Generate a random device ID on each bootup
@@ -61,6 +63,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Required(CONF_COUNTRY): vol.All(vol.Lower, cv.string),
         vol.Required(CONF_CONTINENT): vol.All(vol.Lower, cv.string),
         vol.Required(CONF_DEVICEID): cv.string,
+        vol.Required(CONF_LIVEMAPPATH): cv.string,
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -75,9 +78,9 @@ STATE_CODE_TO_STATE = {
 }
 
 ATTR_COMPONENT_PREFIX = "component_"
+LIVE_MAP_PATH = "www/live_map.png"
 
-
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+def setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up the Deebot vacuums."""
     vacuums = []
 
@@ -93,6 +96,9 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         config.get(CONF_CONTINENT),
     )
 
+    continent = config.get(CONF_CONTINENT).lower()
+    LIVE_MAP_PATH = config.get(CONF_LIVEMAPPATH)
+
     # GET DEVICES
     devices = ecovacs_api.devices()
 
@@ -105,12 +111,13 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
                 ecovacs_api.resource,
                 ecovacs_api.user_access_token,
                 device,
-                config.get(CONF_CONTINENT).lower(),
+                continent,
                 monitor=False,
             )
+
             hass.data[DEEBOT_DEVICES].append(vacbot)
             vacuums.append(DeebotVacuum(vacbot))
-            async_add_entities(vacuums, True)
+            add_entities(vacuums, True)
 
 class DeebotVacuum(VacuumDevice):
     """Deebot Vacuums"""
@@ -126,6 +133,7 @@ class DeebotVacuum(VacuumDevice):
             self._name = "{}".format(self.device.vacuum["did"])
 
         self._fan_speed = None
+        self._live_map = None
 
         _LOGGER.debug("Vacuum initialized: %s", self.name)
 
@@ -217,6 +225,18 @@ class DeebotVacuum(VacuumDevice):
         if command == 'set_water':
             return self.device.SetWaterLevel(params['amount'])
 
+        if command == 'clean':
+            return self.device.Clean(params['type'])
+
+        if command == 'refresh_live_map':
+            return await self.hass.async_add_executor_job(self.device.refresh_liveMap)
+        
+        if command == 'build_live_map':
+            if(self._live_map != self.device.live_map):
+                self._live_map = self.device.live_map
+                with open(params['path'], "wb") as fh:
+                    fh.write(base64.decodebytes(self.device.live_map))
+
         await self.hass.async_add_executor_job(self.device.exc_command, command, params)
 
     async def async_update(self):
@@ -242,4 +262,10 @@ class DeebotVacuum(VacuumDevice):
             i = i+1
         
         data['last_clean_image'] = self.device.last_clean_image
+
+        if(self._live_map != self.device.live_map):
+            self._live_map = self.device.live_map
+            with open(LIVE_MAP_PATH, "wb") as fh:
+                fh.write(base64.decodebytes(self.device.live_map))
+
         return data
