@@ -11,7 +11,7 @@ from deebotozmo import *
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
 import base64
 
-REQUIREMENTS = ['deebotozmo==1.4.9']
+REQUIREMENTS = ['deebotozmo==1.5.8']
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
@@ -40,7 +40,7 @@ from homeassistant.components.vacuum import (
     SUPPORT_SEND_COMMAND,
     SUPPORT_START,
     SUPPORT_STATE,
-    VacuumDevice,
+    VacuumEntity,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -117,7 +117,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
             vacuums.append(DeebotVacuum(config, vacbot))
             add_entities(vacuums, True)
 
-class DeebotVacuum(VacuumDevice):
+class DeebotVacuum(VacuumEntity):
     """Deebot Vacuums"""
 
     def __init__(self,config, device):
@@ -162,12 +162,8 @@ class DeebotVacuum(VacuumDevice):
     @property
     def state(self):
         """Return the state of the vacuum cleaner."""
-        try:
+        if self.device.vacuum_status is not None:
             return STATE_CODE_TO_STATE[self.device.vacuum_status]
-        except KeyError:
-            _LOGGER.error("STATE not supported: %s", self.device.vacuum_status)
-            return None
-        return self.device.vacuum_status
 
     @property
     def available(self) -> bool:
@@ -227,10 +223,16 @@ class DeebotVacuum(VacuumDevice):
         if command == 'clean':
             return self.device.Clean(params['type'])
 
+        if command == 'refresh_components':
+            return await self.hass.async_add_executor_job(self.device.refresh_components)
+
+        if command == 'refresh_statuses':
+            return await self.hass.async_add_executor_job(self.device.refresh_statuses)
+
         if command == 'refresh_live_map':
             return await self.hass.async_add_executor_job(self.device.refresh_liveMap)
-        
-        if command == 'build_live_map':
+
+        if command == 'save_live_map':
             if(self._live_map != self.device.live_map):
                 self._live_map = self.device.live_map
                 with open(params['path'], "wb") as fh:
@@ -242,26 +244,6 @@ class DeebotVacuum(VacuumDevice):
         """Fetch state from the device."""
         await self.hass.async_add_executor_job(self.device.request_all_statuses)
 
-    @property
-    def device_state_attributes(self):
-        """Return the device-specific state attributes of this vacuum."""
-        data = {}
-
-        data['robot_status'] = STATE_CODE_TO_STATE[self.device.vacuum_status]
-        data['water_level'] = self.device.water_level
-
-        for key, val in self.device.components.items():
-            attr_name = ATTR_COMPONENT_PREFIX + key
-            data[attr_name] = int(val)
-
-        i = 0
-        for v in self.device.rooms:
-            ke = str(i) + '_' + v['subtype']
-            data[ke] = v['id']
-            i = i+1
-        
-        data['last_clean_image'] = self.device.last_clean_image
-
         try:
             if(self._live_map != self.device.live_map):
                 self._live_map = self.device.live_map
@@ -269,5 +251,27 @@ class DeebotVacuum(VacuumDevice):
                     fh.write(base64.decodebytes(self.device.live_map))
         except KeyError:
             _LOGGER.warning("Can't access local folder: %s", LIVE_MAP_PATH)
+
+    @property
+    def device_state_attributes(self):
+        """Return the device-specific state attributes of this vacuum."""
+        data = {}
+
+        if self.device.vacuum_status is not None:
+            data['robot_status'] = STATE_CODE_TO_STATE[self.device.vacuum_status]
+
+        data['water_level'] = self.device.water_level
+        data['last_clean_image'] = self.device.last_clean_image
+
+        for key, val in self.device.components.items():
+            attr_name = ATTR_COMPONENT_PREFIX + key
+            data[attr_name] = int(val)
+
+        if self.device.Map.rooms is not None:
+            i = 0
+            for v in self.device.Map.rooms:
+                ke = str(i) + '_' + v['subtype']
+                data[ke] = v['id']
+                i = i+1
 
         return data
