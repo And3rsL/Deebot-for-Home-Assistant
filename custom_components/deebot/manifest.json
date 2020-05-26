@@ -7,5 +7,5 @@
   ],
   "dependencies": [],
   "codeowners": ["@And3rsL"],
-  "homeassistant": "0.99.3"
+  "homeassistant": "0.110.0"
 }
