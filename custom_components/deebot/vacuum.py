@@ -11,7 +11,7 @@ from deebotozmo import *
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
 import base64
 
-REQUIREMENTS = ['deebotozmo==1.5.8']
+REQUIREMENTS = ['deebotozmo==1.5.9']
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
@@ -110,7 +110,6 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
                 ecovacs_api.user_access_token,
                 device,
                 continent,
-                monitor=False,
             )
 
             hass.data[DEEBOT_DEVICES].append(vacbot)
@@ -250,7 +249,7 @@ class DeebotVacuum(VacuumEntity):
                 with open(self._live_map_path, "wb") as fh:
                     fh.write(base64.decodebytes(self.device.live_map))
         except KeyError:
-            _LOGGER.warning("Can't access local folder: %s", LIVE_MAP_PATH)
+            _LOGGER.warning("Can't access local folder: %s", self._live_map_path)
 
     @property
     def device_state_attributes(self):
@@ -267,9 +266,9 @@ class DeebotVacuum(VacuumEntity):
             attr_name = ATTR_COMPONENT_PREFIX + key
             data[attr_name] = int(val)
 
-        if self.device.Map.rooms is not None:
+        if self.device.getSavedRooms() is not None:
             i = 0
-            for v in self.device.Map.rooms:
+            for v in self.device.getSavedRooms():
                 ke = str(i) + '_' + v['subtype']
                 data[ke] = v['id']
                 i = i+1
