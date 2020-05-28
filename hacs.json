@@ -1,3 +1,5 @@
 {
-  "name": "Deebot 960/950/920 vacuum"
+  "name": "Deebot 960/950/920 vacuum",
+  "homeassistant": "0.110.0",
+  "iot_class": "Cloud Polling"
 }

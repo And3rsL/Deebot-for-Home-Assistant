@@ -11,7 +11,7 @@ from deebotozmo import *
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
 import base64
 
-REQUIREMENTS = ['deebotozmo==1.5.9']
+REQUIREMENTS = ['deebotozmo==1.6.0']
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
