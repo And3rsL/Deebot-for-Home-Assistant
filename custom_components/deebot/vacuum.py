@@ -11,12 +11,14 @@ from deebotozmo import *
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
 import base64
 
-REQUIREMENTS = ['deebotozmo==1.6.0']
+REQUIREMENTS = ['deebotozmo==1.6.2']
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
 CONF_DEVICEID = "deviceid"
 CONF_LIVEMAPPATH = "livemappath"
+CONF_LIVEMAP = "live_map"
+CONF_SHOWCOLORROOMS = "show_color_rooms"
 DEEBOT_DEVICES = "deebot_devices"
 
 # Generate a random device ID on each bootup
@@ -63,7 +65,9 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Required(CONF_COUNTRY): vol.All(vol.Lower, cv.string),
         vol.Required(CONF_CONTINENT): vol.All(vol.Lower, cv.string),
         vol.Required(CONF_DEVICEID): cv.string,
-        vol.Required(CONF_LIVEMAPPATH): cv.string,
+        vol.Optional(CONF_LIVEMAP, default=True): cv.boolean,
+        vol.Optional(CONF_SHOWCOLORROOMS, default=False): cv.boolean,
+        vol.Optional(CONF_LIVEMAPPATH, default='www/live_map.png'): cv.string
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -92,13 +96,15 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         config.get(CONF_USERNAME),
         EcoVacsAPI.md5(config.get(CONF_PASSWORD)),
         config.get(CONF_COUNTRY),
-        config.get(CONF_CONTINENT),
+        config.get(CONF_CONTINENT)
     )
 
     continent = config.get(CONF_CONTINENT).lower()
 
     # GET DEVICES
     devices = ecovacs_api.devices()
+    liveMapEnabled = config.get(CONF_LIVEMAP)
+    liveMapRooms = config.get(CONF_SHOWCOLORROOMS)
 
     # CREATE VACBOT FOR EACH DEVICE
     for device in devices:
@@ -110,6 +116,8 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
                 ecovacs_api.user_access_token,
                 device,
                 continent,
+                liveMapEnabled,
+                liveMapRooms
             )
 
             hass.data[DEEBOT_DEVICES].append(vacbot)

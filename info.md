@@ -26,7 +26,10 @@ vacuum:
     country: YOUR_TWO_LETTER_COUNTRY_CODE
     continent: YOUR_TWO_LETTER_CONTINENT_CODE
     deviceid: YOUR_ROBOT_ID
-    livemappath: 'www/live_map.png'
+    # Optional
+    live_map: True                    # Enable Live Map.. may cause issues on low power hardware | Default: True
+    show_color_rooms: False           # Enable draw room colors as in the app | Default: False
+    livemappath: 'www/live_map.png'   # Path where to save live_map
 ``` 
 
 You can find your robot id under settings and "About Deebot"
