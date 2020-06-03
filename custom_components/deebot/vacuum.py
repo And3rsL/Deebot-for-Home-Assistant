@@ -11,7 +11,7 @@ from deebotozmo import *
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
 import base64
 
-REQUIREMENTS = ['deebotozmo==1.6.2']
+REQUIREMENTS = ['deebotozmo==1.6.6']
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
@@ -219,16 +219,16 @@ class DeebotVacuum(VacuumEntity):
         _LOGGER.debug("async_send_command %s (%s), %s", command, params, kwargs)
         
         if command == 'spot_area':
-            return self.device.SpotArea(params['rooms'], params['cleanings'])
+            return await self.hass.async_add_executor_job(self.device.SpotArea(params['rooms'], params['cleanings']))
 
         if command == 'custom_area':
-            return self.device.CustomArea(params['coordinates'], params['cleanings'])
+            return await self.hass.async_add_executor_job(self.device.CustomArea(params['coordinates'], params['cleanings']))
 
         if command == 'set_water':
-            return self.device.SetWaterLevel(params['amount'])
+            return await self.hass.async_add_executor_job(self.device.SetWaterLevel(params['amount']))
 
-        if command == 'clean':
-            return self.device.Clean(params['type'])
+        if command == 'auto_clean':
+            return await self.hass.async_add_executor_job(self.device.Clean(params['type']))
 
         if command == 'refresh_components':
             return await self.hass.async_add_executor_job(self.device.refresh_components)
