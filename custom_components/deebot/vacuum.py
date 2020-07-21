@@ -219,25 +219,32 @@ class DeebotVacuum(VacuumEntity):
         _LOGGER.debug("async_send_command %s (%s), %s", command, params, kwargs)
         
         if command == 'spot_area':
-            return await self.hass.async_add_executor_job(self.device.SpotArea(params['rooms'], params['cleanings']))
+            await self.hass.async_add_executor_job(self.device.SpotArea, params['rooms'], params['cleanings'])
+            return
 
         if command == 'custom_area':
-            return await self.hass.async_add_executor_job(self.device.CustomArea(params['coordinates'], params['cleanings']))
+            await self.hass.async_add_executor_job(self.device.CustomArea, params['coordinates'], params['cleanings'])
+            return
 
         if command == 'set_water':
-            return await self.hass.async_add_executor_job(self.device.SetWaterLevel(params['amount']))
+            await self.hass.async_add_executor_job(self.device.SetWaterLevel, params['amount'])
+            return
 
         if command == 'auto_clean':
-            return await self.hass.async_add_executor_job(self.device.Clean(params['type']))
+            self.hass.async_add_executor_job(self.device.Clean, params['type'])
+            return
 
         if command == 'refresh_components':
-            return await self.hass.async_add_executor_job(self.device.refresh_components)
+            await self.hass.async_add_executor_job(self.device.refresh_components)
+            return
 
         if command == 'refresh_statuses':
-            return await self.hass.async_add_executor_job(self.device.refresh_statuses)
+            await self.hass.async_add_executor_job(self.device.refresh_statuses)
+            return
 
         if command == 'refresh_live_map':
-            return await self.hass.async_add_executor_job(self.device.refresh_liveMap)
+            await self.hass.async_add_executor_job(self.device.refresh_liveMap)
+            return
 
         if command == 'save_live_map':
             if(self._live_map != self.device.live_map):
