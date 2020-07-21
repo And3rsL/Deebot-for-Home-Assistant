@@ -35,5 +35,3 @@ Add any other context about the problem here.
 
 **Logs**
 Please add full home_assistant.log filtered on [deebotozmo]
-
-## NO ISSUES WILL BE ACCEPTED WITHOUT THIS INFORMATIONS
