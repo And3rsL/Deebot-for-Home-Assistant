@@ -8,10 +8,8 @@ import string
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 from deebotozmo import *
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
 import base64
-
-REQUIREMENTS = ['deebotozmo==1.6.6']
+from . import HUB as hub
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
@@ -20,11 +18,6 @@ CONF_LIVEMAPPATH = "livemappath"
 CONF_LIVEMAP = "live_map"
 CONF_SHOWCOLORROOMS = "show_color_rooms"
 DEEBOT_DEVICES = "deebot_devices"
-
-# Generate a random device ID on each bootup
-DEEBOT_API_DEVICEID = "".join(
-    random.choice(string.ascii_uppercase + string.digits) for _ in range(8)
-)
 
 from homeassistant.components.vacuum import (
     PLATFORM_SCHEMA,
@@ -58,20 +51,6 @@ SUPPORT_DEEBOT = (
     | SUPPORT_STATE
 )
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {
-        vol.Required(CONF_USERNAME): cv.string,
-        vol.Required(CONF_PASSWORD): cv.string,
-        vol.Required(CONF_COUNTRY): vol.All(vol.Lower, cv.string),
-        vol.Required(CONF_CONTINENT): vol.All(vol.Lower, cv.string),
-        vol.Required(CONF_DEVICEID): cv.string,
-        vol.Optional(CONF_LIVEMAP, default=True): cv.boolean,
-        vol.Optional(CONF_SHOWCOLORROOMS, default=False): cv.boolean,
-        vol.Optional(CONF_LIVEMAPPATH, default='www/live_map.png'): cv.string
-    },
-    extra=vol.ALLOW_EXTRA,
-)
-
 STATE_CODE_TO_STATE = {
     'STATE_IDLE': STATE_IDLE,
     'STATE_CLEANING': STATE_CLEANING,
@@ -83,54 +62,23 @@ STATE_CODE_TO_STATE = {
 
 ATTR_COMPONENT_PREFIX = "component_"
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+def setup_platform(hass, config, add_devices, discovery_info=None):
     """Set up the Deebot vacuums."""
-    vacuums = []
-
     if DEEBOT_DEVICES not in hass.data:
         hass.data[DEEBOT_DEVICES] = []
-
-    # Setting up API credentials
-    ecovacs_api = EcoVacsAPI(
-        DEEBOT_API_DEVICEID,
-        config.get(CONF_USERNAME),
-        EcoVacsAPI.md5(config.get(CONF_PASSWORD)),
-        config.get(CONF_COUNTRY),
-        config.get(CONF_CONTINENT)
-    )
-
-    continent = config.get(CONF_CONTINENT).lower()
-
-    # GET DEVICES
-    devices = ecovacs_api.devices()
-    liveMapEnabled = config.get(CONF_LIVEMAP)
-    liveMapRooms = config.get(CONF_SHOWCOLORROOMS)
-
-    # CREATE VACBOT FOR EACH DEVICE
-    for device in devices:
-        if device['name'] == config.get(CONF_DEVICEID):
-            vacbot = VacBot(
-                ecovacs_api.uid,
-                ecovacs_api.REALM,
-                ecovacs_api.resource,
-                ecovacs_api.user_access_token,
-                device,
-                continent,
-                liveMapEnabled,
-                liveMapRooms
-            )
-
-            hass.data[DEEBOT_DEVICES].append(vacbot)
-            vacuums.append(DeebotVacuum(config, vacbot))
-            add_entities(vacuums, True)
+    
+    vacuum = DeebotVacuum(hass)
+    add_devices([vacuum])
 
 class DeebotVacuum(VacuumEntity):
     """Deebot Vacuums"""
 
-    def __init__(self,config, device):
+    def __init__(self, hass):
         """Initialize the Deebot Vacuum."""
-        self.device = device
-        self.device.connect_and_wait_until_ready()
+        self._hass = hass
+
+        self.device = hub.vacbot
+        
         if self.device.vacuum.get("nick", None) is not None:
             self._name = "{}".format(self.device.vacuum["nick"])
         else:
@@ -139,7 +87,7 @@ class DeebotVacuum(VacuumEntity):
 
         self._fan_speed = None
         self._live_map = None
-        self._live_map_path = config.get(CONF_LIVEMAPPATH)
+        self._live_map_path = hub.config.get(CONF_LIVEMAPPATH)
 
         _LOGGER.debug("Vacuum initialized: %s", self.name)
 
@@ -265,27 +213,3 @@ class DeebotVacuum(VacuumEntity):
                     fh.write(base64.decodebytes(self.device.live_map))
         except KeyError:
             _LOGGER.warning("Can't access local folder: %s", self._live_map_path)
-
-    @property
-    def device_state_attributes(self):
-        """Return the device-specific state attributes of this vacuum."""
-        data = {}
-
-        if self.device.vacuum_status is not None:
-            data['robot_status'] = STATE_CODE_TO_STATE[self.device.vacuum_status]
-
-        data['water_level'] = self.device.water_level
-        data['last_clean_image'] = self.device.last_clean_image
-
-        for key, val in self.device.components.items():
-            attr_name = ATTR_COMPONENT_PREFIX + key
-            data[attr_name] = int(val)
-
-        if self.device.getSavedRooms() is not None:
-            i = 0
-            for v in self.device.getSavedRooms():
-                ke = str(i) + '_' + v['subtype']
-                data[ke] = v['id']
-                i = i+1
-
-        return data
