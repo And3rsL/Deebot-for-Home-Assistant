@@ -1,7 +1,7 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
 <br><a href="https://www.buymeacoffee.com/4nd3rs" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-black.png" width="150px" height="35px" alt="Buy Me A Coffee" style="height: 35px !important;width: 150px !important;" ></a>
 
-# Home Assistant Custom Component for Ecovacs Deebot Ozmo 960/950/920
+# Home Assistant Custom Component for Ecovacs Deebot Ozmo 960/950/920/T8
 
 ![Preview](prev.jpg)
 
@@ -25,11 +25,14 @@ deebot:
   password: YOUR_ECOVACS_PASSWORD
   country: YOUR_TWO_LETTER_COUNTRY_CODE
   continent: YOUR_TWO_LETTER_CONTINENT_CODE
-  deviceid: YOUR_ROBOT_ID
+  deviceid:
+    - YOUR_ROBOT_ID
+    - YOUR_ROBOT_ID2
+    - etc...
   # Optional
   live_map: True                    # Enable Live Map.. may cause issues on low power hardware | Default: True
   show_color_rooms: False           # Enable draw room colors as in the app | Default: False
-  livemappath: 'www/live_map.png'   # Path where to save live_map
+  livemappath: 'www/'   # Path where to save live_map (Each bot will have XXX.png where XXX is the vacbot name)
 ``` 
 
 You can find your robot id under settings and "About Deebot"

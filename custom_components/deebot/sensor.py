@@ -46,17 +46,29 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     """Set up the Deebot sensor."""
     hub.update()
 
-    add_devices([DeebotVacStatusSensor(hub.vacbot, "robot_status")], True)
-    add_devices([DeebotLastCleanImageSensor(hub.vacbot, "last_clean_image")], True)
-    add_devices([DeebotWaterLevelSensor(hub.vacbot, "water_level")], True)
+    for vacbot in hub.vacbots:
+        # General
+        add_devices([DeebotVacStatusSensor(vacbot, "robot_status")], True)
+        add_devices([DeebotLastCleanImageSensor(vacbot, "last_clean_image")], True)
+        add_devices([DeebotWaterLevelSensor(vacbot, "water_level")], True)
 
-    add_devices([DeebotComponentSensor(hub.vacbot, "brush")], True)
-    add_devices([DeebotComponentSensor(hub.vacbot, "sideBrush")], True)
-    add_devices([DeebotComponentSensor(hub.vacbot, "heap")], True)
+        # Components
+        add_devices([DeebotComponentSensor(vacbot, "brush")], True)
+        add_devices([DeebotComponentSensor(vacbot, "sideBrush")], True)
+        add_devices([DeebotComponentSensor(vacbot, "heap")], True)
 
-    if hub.vacbot.getSavedRooms() is not None:
-        for v in hub.vacbot.getSavedRooms():
-            add_devices([DeebotRoomSensor(hub.vacbot, v['subtype'])], True)
+        # Stats
+        add_devices([DeebotStatsSensor(vacbot, "stats_area")], True)
+        add_devices([DeebotStatsSensor(vacbot, "stats_time")], True)
+        add_devices([DeebotStatsSensor(vacbot, "stats_type")], True)
+
+        # Rooms
+        if vacbot.getSavedRooms() is not None:
+            for v in vacbot.getSavedRooms():
+                _LOGGER.debug("New room type found: " + v['subtype'])
+                add_devices([DeebotRoomSensor(vacbot, v['subtype'])], True)
+        else:
+            _LOGGER.warning("No rooms found")
 
 class DeebotVacStatusSensor(Entity):
     """Deebot Sensor"""
@@ -181,6 +193,50 @@ class DeebotComponentSensor(Entity):
         for key, val in self._vacbot.components.items():
             if key == self._id:
                 return int(val)
+
+class DeebotStatsSensor(Entity):
+    """Deebot Sensor"""
+
+    def __init__(self, vacbot, device_id):
+        """Initialize the Sensor."""
+
+        self._state = STATE_UNKNOWN
+        self._vacbot = vacbot
+        self._id = device_id
+
+        if self._vacbot.vacuum.get("nick", None) is not None:
+            vacbot_name = "{}".format(self._vacbot.vacuum["nick"])
+        else:
+            # In case there is no nickname defined, use the device id
+            vacbot_name = "{}".format(self._vacbot.vacuum["did"])
+
+        self._name = vacbot_name + "_" + device_id
+
+    @property
+    def name(self):
+        """Return the name of the device."""
+        return self._name
+
+    @property
+    def unit_of_measurement(self):
+        """Return the unit of measurement."""
+        if self._id == 'stats_area':
+            return "mq"
+        elif self._id == 'stats_time':
+            return "min"
+
+    @property
+    def state(self):
+        """Return the state of the vacuum cleaner."""
+        
+        if self._id == 'stats_area':
+            return int(self._vacbot.stats_area)
+        elif self._id == 'stats_time':
+            return int(self._vacbot.stats_time/60)
+        elif self._id == 'stats_type':
+            return self._vacbot.stats_type
+        else:
+            return STATE_UNKNOWN
 
 class DeebotRoomSensor(Entity):
     """Deebot Sensor"""

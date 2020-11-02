@@ -15,7 +15,7 @@ from homeassistant.helpers import discovery
 from homeassistant.helpers.entity import Entity
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
 
-REQUIREMENTS = ['deebotozmo==1.6.8']
+REQUIREMENTS = ['deebotozmo==1.6.9']
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
@@ -41,10 +41,10 @@ CONFIG_SCHEMA = vol.Schema({
         vol.Required(CONF_PASSWORD): cv.string,
         vol.Required(CONF_COUNTRY): vol.All(vol.Lower, cv.string),
         vol.Required(CONF_CONTINENT): vol.All(vol.Lower, cv.string),
-        vol.Required(CONF_DEVICEID): cv.string,
+        vol.Required(CONF_DEVICEID): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional(CONF_LIVEMAP, default=True): cv.boolean,
         vol.Optional(CONF_SHOWCOLORROOMS, default=False): cv.boolean,
-        vol.Optional(CONF_LIVEMAPPATH, default='www/live_map.png'): cv.string
+        vol.Optional(CONF_LIVEMAPPATH, default='www/'): cv.string
     }),
 }, extra=vol.ALLOW_EXTRA)
 
@@ -80,12 +80,12 @@ class DeebotHub(Entity):
         liveMapEnabled = domain_config.get(CONF_LIVEMAP)
         liveMapRooms = domain_config.get(CONF_SHOWCOLORROOMS)
         continent = domain_config.get(CONF_CONTINENT).lower()
-        self.vacbot = None
+        self.vacbots = []
 
         # CREATE VACBOT FOR EACH DEVICE
         for device in devices:
-            if device['name'] == domain_config.get(CONF_DEVICEID):
-                self.vacbot = VacBot(
+            if device['name'] in domain_config.get(CONF_DEVICEID):
+                vacbot = VacBot(
                     self.ecovacs_api.uid,
                     self.ecovacs_api.REALM,
                     self.ecovacs_api.resource,
@@ -95,20 +95,20 @@ class DeebotHub(Entity):
                     liveMapEnabled,
                     liveMapRooms
                 )
+                
+                vacbot.connect_and_wait_until_ready()
+                _LOGGER.debug("New vacbot found: " + device['name'])
 
-        self.vacbot.connect_and_wait_until_ready()
+                self.vacbots.append(vacbot)
+ 
         _LOGGER.debug("Hub initialized")
-
-    @property
-    def last_update(self):
-        """ Return the last update timestamp. """
-        return self._last_update
 
     @Throttle(timedelta(seconds=10))
     def update(self):
         """ Update all statuses. """
         try:
-            self.vacbot.request_all_statuses()
+            for vacbot in self.vacbots:
+                vacbot.request_all_statuses()
         except Exception as ex:
             _LOGGER.error('Update failed: %s', ex)
             raise

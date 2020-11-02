@@ -67,17 +67,18 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     if DEEBOT_DEVICES not in hass.data:
         hass.data[DEEBOT_DEVICES] = []
     
-    vacuum = DeebotVacuum(hass)
-    add_devices([vacuum])
+    for vacbot in hub.vacbots:
+        vacuum = DeebotVacuum(hass, vacbot)
+        add_devices([vacuum])
 
 class DeebotVacuum(VacuumEntity):
     """Deebot Vacuums"""
 
-    def __init__(self, hass):
+    def __init__(self, hass, vacbot):
         """Initialize the Deebot Vacuum."""
         self._hass = hass
 
-        self.device = hub.vacbot
+        self.device = vacbot
         
         if self.device.vacuum.get("nick", None) is not None:
             self._name = "{}".format(self.device.vacuum["nick"])
@@ -87,7 +88,7 @@ class DeebotVacuum(VacuumEntity):
 
         self._fan_speed = None
         self._live_map = None
-        self._live_map_path = hub.config.get(CONF_LIVEMAPPATH)
+        self._live_map_path = hub.config.get(CONF_LIVEMAPPATH) + self._name + '_liveMap.png'
 
         _LOGGER.debug("Vacuum initialized: %s", self.name)
 
