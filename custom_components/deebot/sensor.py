@@ -48,12 +48,11 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
         add_devices([DeebotStatsSensor(vacbot, "stats_type")], True)
 
         # Rooms
-        if vacbot.getSavedRooms() is not None:
-            for v in vacbot.getSavedRooms():
-                _LOGGER.debug("New room type found: " + v['subtype'])
-                add_devices([DeebotRoomSensor(vacbot, v['subtype'])], True)
-        else:
-            _LOGGER.warning("No rooms found")
+        typeRooms = vacbot.getTypeRooms()
+
+        for v in typeRooms:
+            _LOGGER.debug("New room type found: " + typeRooms[v])
+            add_devices([DeebotRoomSensor(vacbot, v, typeRooms[v])], True)
 
 
 class DeebotLastCleanImageSensor(Entity):
@@ -220,22 +219,22 @@ class DeebotStatsSensor(Entity):
     def icon(self) -> Optional[str]:
         """Return the icon to use in the frontend, if any."""
         if self._id == 'stats_area':
-            return "mdi:texture-box"
+            return "mdi:floor-plan"
         elif self._id == 'stats_time':
             return "mdi:timer-outline"
         elif self._id == 'stats_type':
             return "mdi:cog"
 
-
 class DeebotRoomSensor(Entity):
     """Deebot Sensor"""
 
-    def __init__(self, vacbot, device_id):
+    def __init__(self, vacbot, roomId, roomDesc):
         """Initialize the Sensor."""
 
         self._state = STATE_UNKNOWN
         self._vacbot = vacbot
-        self._id = device_id
+        self._id = roomId
+        self._desc = roomDesc
 
         if self._vacbot.vacuum.get("nick", None) is not None:
             vacbot_name = "{}".format(self._vacbot.vacuum["nick"])
@@ -243,7 +242,7 @@ class DeebotRoomSensor(Entity):
             # In case there is no nickname defined, use the device id
             vacbot_name = "{}".format(self._vacbot.vacuum["did"])
 
-        self._name = vacbot_name + "_" + device_id
+        self._name = vacbot_name + "_" + roomDesc
 
     @property
     def name(self):
@@ -256,7 +255,7 @@ class DeebotRoomSensor(Entity):
         room = None
 
         for v in self._vacbot.getSavedRooms():
-            if v['subtype'] == self._id:
+            if v['subtype'] == self._desc:
                 if room is None:
                     room = v['id']
                 else:
