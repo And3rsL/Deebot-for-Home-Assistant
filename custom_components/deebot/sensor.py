@@ -219,3 +219,8 @@ class DeebotRoomSensor(DeebotBaseSensor):
             return rooms
 
         return None
+
+    @property
+    def icon(self) -> Optional[str]:
+        """Return the icon to use in the frontend, if any."""
+        return "mdi:floor-plan"
