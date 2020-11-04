@@ -1,9 +1,10 @@
 """Support for Deebot Sensor."""
-from typing import Optional
+from typing import Optional, Dict, Any, Union, List
 
 from deebotozmo import *
 from homeassistant.const import (STATE_UNKNOWN)
 from homeassistant.helpers.entity import Entity
+from homeassistant.util import slugify
 
 from . import HUB as hub
 
@@ -48,11 +49,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
         add_devices([DeebotStatsSensor(vacbot, "stats_type")], True)
 
         # Rooms
-        typeRooms = vacbot.getTypeRooms()
-
-        for v in typeRooms:
-            _LOGGER.debug("New room type found: " + typeRooms[v])
-            add_devices([DeebotRoomSensor(vacbot, v, typeRooms[v])], True)
+        add_devices([DeebotRoomSensor(vacbot, "rooms")], True)
 
 
 class DeebotBaseSensor(Entity):
@@ -165,7 +162,7 @@ class DeebotStatsSensor(DeebotBaseSensor):
     @property
     def state(self):
         """Return the state of the vacuum cleaner."""
-        
+
         if self._id == 'stats_area' and self._vacbot.stats_area is not None:
             return int(self._vacbot.stats_area)
         elif self._id == 'stats_time'  and self._vacbot.stats_time is not None:
@@ -185,25 +182,40 @@ class DeebotStatsSensor(DeebotBaseSensor):
         elif self._id == 'stats_type':
             return "mdi:cog"
 
+
 class DeebotRoomSensor(DeebotBaseSensor):
     """Deebot Sensor"""
 
-    def __init__(self, vacbot, roomId, roomDesc):
+    def __init__(self, vacbot, device_id):
         """Initialize the Sensor."""
-        super(DeebotRoomSensor, self).__init__(vacbot, str(roomId))
-        self._desc = roomDesc
-        self._name = self._vacbot_name + "_" + roomDesc
+        super(DeebotRoomSensor, self).__init__(vacbot, device_id)
 
     @property
     def state(self):
         """Return the state of the vacuum cleaner."""
-        room = None
+        return 0 if self._vacbot.getSavedRooms() is None else len(self._vacbot.getSavedRooms())
 
-        for v in self._vacbot.getSavedRooms():
-            if v['subtype'] == self._desc:
-                if room is None:
-                    room = v['id']
+    @property
+    def state_attributes(self) -> Optional[Dict[str, Any]]:
+        """Return the state attributes.
+
+        Implemented by component base class. Convention for attribute names
+        is lowercase snake_case.
+        """
+        if self._vacbot.getSavedRooms() is not None:
+            rooms: Dict[str, Union[int, List[int]]] = {}
+            for r in self._vacbot.getSavedRooms():
+                # convert room name to snake_case to meet the convention
+                room_name = slugify(r["subtype"])
+                room_values = rooms.get(room_name)
+                if room_values is None:
+                    rooms[room_name] = r["id"]
+                elif isinstance(room_values, list):
+                    room_values.append(r["id"])
                 else:
-                    room = room + "," + v['id']
+                    # Convert from int to list
+                    rooms[room_name] = [room_values, r["id"]]
 
-        return room
+            return rooms
+
+        return None
