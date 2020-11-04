@@ -229,9 +229,9 @@ class DeebotStatsSensor(Entity):
     def state(self):
         """Return the state of the vacuum cleaner."""
         
-        if self._id == 'stats_area':
+        if self._id == 'stats_area' and self._vacbot.stats_area is not None:
             return int(self._vacbot.stats_area)
-        elif self._id == 'stats_time':
+        elif self._id == 'stats_time'  and self._vacbot.stats_time is not None:
             return int(self._vacbot.stats_time/60)
         elif self._id == 'stats_type':
             return self._vacbot.stats_type
