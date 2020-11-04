@@ -1,36 +1,21 @@
 """Support for Deebot Sensor."""
-import asyncio
-import logging
-import async_timeout
-import time
-import random
-import string
-import voluptuous as vol
-from homeassistant.helpers.entity import Entity
-from homeassistant.const import (STATE_UNKNOWN)
+from typing import Optional
+
 from deebotozmo import *
-import base64
+from homeassistant.const import (STATE_UNKNOWN)
+from homeassistant.helpers.entity import Entity
+
 from . import HUB as hub
- 
+
 _LOGGER = logging.getLogger(__name__)
 
 from homeassistant.components.vacuum import (
-    PLATFORM_SCHEMA,
     STATE_CLEANING,
     STATE_DOCKED,
     STATE_ERROR,
     STATE_IDLE,
     STATE_PAUSED,
     STATE_RETURNING,
-    SUPPORT_BATTERY,
-    SUPPORT_FAN_SPEED,
-    SUPPORT_LOCATE,
-    SUPPORT_PAUSE,
-    SUPPORT_RETURN_HOME,
-    SUPPORT_SEND_COMMAND,
-    SUPPORT_START,
-    SUPPORT_STATE,
-    VacuumEntity,
 )
 
 STATE_CODE_TO_STATE = {
@@ -41,6 +26,7 @@ STATE_CODE_TO_STATE = {
     'STATE_ERROR': STATE_ERROR,
     'STATE_PAUSED': STATE_PAUSED,
 }
+
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Set up the Deebot sensor."""
@@ -53,9 +39,9 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
         add_devices([DeebotWaterLevelSensor(vacbot, "water_level")], True)
 
         # Components
-        add_devices([DeebotComponentSensor(vacbot, "brush")], True)
-        add_devices([DeebotComponentSensor(vacbot, "sideBrush")], True)
-        add_devices([DeebotComponentSensor(vacbot, "heap")], True)
+        add_devices([DeebotComponentSensor(vacbot, COMPONENT_MAIN_BRUSH)], True)
+        add_devices([DeebotComponentSensor(vacbot, COMPONENT_SIDE_BRUSH)], True)
+        add_devices([DeebotComponentSensor(vacbot, COMPONENT_FILTER)], True)
 
         # Stats
         add_devices([DeebotStatsSensor(vacbot, "stats_area")], True)
@@ -69,6 +55,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
                 add_devices([DeebotRoomSensor(vacbot, v['subtype'])], True)
         else:
             _LOGGER.warning("No rooms found")
+
 
 class DeebotVacStatusSensor(Entity):
     """Deebot Sensor"""
@@ -99,6 +86,12 @@ class DeebotVacStatusSensor(Entity):
         if self._vacbot.vacuum_status is not None:
             return STATE_CODE_TO_STATE[self._vacbot.vacuum_status]
 
+    @property
+    def icon(self) -> Optional[str]:
+        """Return the icon to use in the frontend, if any."""
+        return "mdi:cog"
+
+
 class DeebotLastCleanImageSensor(Entity):
     """Deebot Sensor"""
 
@@ -127,6 +120,12 @@ class DeebotLastCleanImageSensor(Entity):
         """Return the state of the vacuum cleaner."""
         if self._vacbot.last_clean_image is not None:
             return self._vacbot.last_clean_image
+
+    @property
+    def icon(self) -> Optional[str]:
+        """Return the icon to use in the frontend, if any."""
+        return "mdi:image-search"
+
 
 class DeebotWaterLevelSensor(Entity):
     """Deebot Sensor"""
@@ -157,6 +156,12 @@ class DeebotWaterLevelSensor(Entity):
 
         if self._vacbot.water_level is not None:
             return self._vacbot.water_level
+
+    @property
+    def icon(self) -> Optional[str]:
+        """Return the icon to use in the frontend, if any."""
+        return "mdi:water"
+
 
 class DeebotComponentSensor(Entity):
     """Deebot Sensor"""
@@ -193,6 +198,15 @@ class DeebotComponentSensor(Entity):
         for key, val in self._vacbot.components.items():
             if key == self._id:
                 return int(val)
+
+    @property
+    def icon(self) -> Optional[str]:
+        """Return the icon to use in the frontend, if any."""
+        if self._id == COMPONENT_MAIN_BRUSH or self._id == COMPONENT_SIDE_BRUSH:
+            return "mdi:broom"
+        elif self._id == COMPONENT_FILTER:
+            return "mdi:air-filter"
+
 
 class DeebotStatsSensor(Entity):
     """Deebot Sensor"""
@@ -237,6 +251,17 @@ class DeebotStatsSensor(Entity):
             return self._vacbot.stats_type
         else:
             return STATE_UNKNOWN
+
+    @property
+    def icon(self) -> Optional[str]:
+        """Return the icon to use in the frontend, if any."""
+        if self._id == 'stats_area':
+            return "mdi:texture-box"
+        elif self._id == 'stats_time':
+            return "mdi:timer-outline"
+        elif self._id == 'stats_type':
+            return "mdi:cog"
+
 
 class DeebotRoomSensor(Entity):
     """Deebot Sensor"""
