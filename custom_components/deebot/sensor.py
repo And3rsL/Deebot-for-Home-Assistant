@@ -34,7 +34,6 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
 
     for vacbot in hub.vacbots:
         # General
-        add_devices([DeebotVacStatusSensor(vacbot, "robot_status")], True)
         add_devices([DeebotLastCleanImageSensor(vacbot, "last_clean_image")], True)
         add_devices([DeebotWaterLevelSensor(vacbot, "water_level")], True)
 
@@ -55,41 +54,6 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
                 add_devices([DeebotRoomSensor(vacbot, v['subtype'])], True)
         else:
             _LOGGER.warning("No rooms found")
-
-
-class DeebotVacStatusSensor(Entity):
-    """Deebot Sensor"""
-
-    def __init__(self, vacbot, device_id):
-        """Initialize the Sensor."""
-
-        self._state = STATE_UNKNOWN
-        self._vacbot = vacbot
-        self._id = device_id
-        
-        if self._vacbot.vacuum.get("nick", None) is not None:
-            vacbot_name = "{}".format(self._vacbot.vacuum["nick"])
-        else:
-            # In case there is no nickname defined, use the device id
-            vacbot_name = "{}".format(self._vacbot.vacuum["did"])
-
-        self._name = vacbot_name + "_status"
-
-    @property
-    def name(self):
-        """Return the name of the device."""
-        return self._name
-
-    @property
-    def state(self):
-        """Return the state of the vacuum cleaner."""
-        if self._vacbot.vacuum_status is not None:
-            return STATE_CODE_TO_STATE[self._vacbot.vacuum_status]
-
-    @property
-    def icon(self) -> Optional[str]:
-        """Return the icon to use in the frontend, if any."""
-        return "mdi:cog"
 
 
 class DeebotLastCleanImageSensor(Entity):
