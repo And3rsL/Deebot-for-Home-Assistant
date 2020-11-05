@@ -47,13 +47,6 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
         add_devices([DeebotStatsSensor(vacbot, "stats_time")], True)
         add_devices([DeebotStatsSensor(vacbot, "stats_type")], True)
 
-        # Rooms
-        typeRooms = vacbot.getTypeRooms()
-
-        for v in typeRooms:
-            _LOGGER.debug("New room type found: " + typeRooms[v])
-            add_devices([DeebotRoomSensor(vacbot, v, typeRooms[v])], True)
-
 
 class DeebotLastCleanImageSensor(Entity):
     """Deebot Sensor"""
@@ -205,7 +198,7 @@ class DeebotStatsSensor(Entity):
     @property
     def state(self):
         """Return the state of the vacuum cleaner."""
-        
+
         if self._id == 'stats_area' and self._vacbot.stats_area is not None:
             return int(self._vacbot.stats_area)
         elif self._id == 'stats_time'  and self._vacbot.stats_time is not None:
@@ -224,41 +217,3 @@ class DeebotStatsSensor(Entity):
             return "mdi:timer-outline"
         elif self._id == 'stats_type':
             return "mdi:cog"
-
-class DeebotRoomSensor(Entity):
-    """Deebot Sensor"""
-
-    def __init__(self, vacbot, roomId, roomDesc):
-        """Initialize the Sensor."""
-
-        self._state = STATE_UNKNOWN
-        self._vacbot = vacbot
-        self._id = roomId
-        self._desc = roomDesc
-
-        if self._vacbot.vacuum.get("nick", None) is not None:
-            vacbot_name = "{}".format(self._vacbot.vacuum["nick"])
-        else:
-            # In case there is no nickname defined, use the device id
-            vacbot_name = "{}".format(self._vacbot.vacuum["did"])
-
-        self._name = vacbot_name + "_" + roomDesc
-
-    @property
-    def name(self):
-        """Return the name of the device."""
-        return self._name
-
-    @property
-    def state(self):
-        """Return the state of the vacuum cleaner."""
-        room = None
-
-        for v in self._vacbot.getSavedRooms():
-            if v['subtype'] == self._desc:
-                if room is None:
-                    room = v['id']
-                else:
-                    room = room + "," + v['id']
-
-        return room
