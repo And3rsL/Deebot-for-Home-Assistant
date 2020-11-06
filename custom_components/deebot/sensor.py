@@ -47,13 +47,6 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
         add_devices([DeebotStatsSensor(vacbot, "stats_time")], True)
         add_devices([DeebotStatsSensor(vacbot, "stats_type")], True)
 
-        # Rooms
-        typeRooms = vacbot.getTypeRooms()
-
-        for v in typeRooms:
-            _LOGGER.debug("New room type found: " + typeRooms[v])
-            add_devices([DeebotRoomSensor(vacbot, v, typeRooms[v])], True)
-
 
 class DeebotBaseSensor(Entity):
     """Deebot base sensor"""
@@ -165,7 +158,7 @@ class DeebotStatsSensor(DeebotBaseSensor):
     @property
     def state(self):
         """Return the state of the vacuum cleaner."""
-        
+
         if self._id == 'stats_area' and self._vacbot.stats_area is not None:
             return int(self._vacbot.stats_area)
         elif self._id == 'stats_time'  and self._vacbot.stats_time is not None:
@@ -184,26 +177,3 @@ class DeebotStatsSensor(DeebotBaseSensor):
             return "mdi:timer-outline"
         elif self._id == 'stats_type':
             return "mdi:cog"
-
-class DeebotRoomSensor(DeebotBaseSensor):
-    """Deebot Sensor"""
-
-    def __init__(self, vacbot, roomId, roomDesc):
-        """Initialize the Sensor."""
-        super(DeebotRoomSensor, self).__init__(vacbot, str(roomId))
-        self._desc = roomDesc
-        self._name = self._vacbot_name + "_" + roomDesc
-
-    @property
-    def state(self):
-        """Return the state of the vacuum cleaner."""
-        room = None
-
-        for v in self._vacbot.getSavedRooms():
-            if v['subtype'] == self._desc:
-                if room is None:
-                    room = v['id']
-                else:
-                    room = room + "," + v['id']
-
-        return room
