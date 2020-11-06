@@ -15,7 +15,7 @@ from homeassistant.helpers import discovery
 from homeassistant.helpers.entity import Entity
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
 
-REQUIREMENTS = ['deebotozmo==1.7.1']
+REQUIREMENTS = ['deebotozmo==1.7.2']
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
@@ -54,7 +54,7 @@ def setup(hass, config):
 
     HUB = DeebotHub(config[DOMAIN])
 
-    for component in ('sensor', 'vacuum'):
+    for component in ('sensor', 'binary_sensor', 'vacuum'):
         discovery.load_platform(hass, component, DOMAIN, {}, config)
 
     return True
