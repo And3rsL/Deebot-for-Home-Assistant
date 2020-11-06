@@ -55,8 +55,8 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
             add_devices([DeebotRoomSensor(vacbot, v, typeRooms[v])], True)
 
 
-class DeebotLastCleanImageSensor(Entity):
-    """Deebot Sensor"""
+class DeebotBaseSensor(Entity):
+    """Deebot base sensor"""
 
     def __init__(self, vacbot, device_id):
         """Initialize the Sensor."""
@@ -66,17 +66,25 @@ class DeebotLastCleanImageSensor(Entity):
         self._id = device_id
 
         if self._vacbot.vacuum.get("nick", None) is not None:
-            vacbot_name = "{}".format(self._vacbot.vacuum["nick"])
+            self._vacbot_name = "{}".format(self._vacbot.vacuum["nick"])
         else:
             # In case there is no nickname defined, use the device id
-            vacbot_name = "{}".format(self._vacbot.vacuum["did"])
+            self._vacbot_name = "{}".format(self._vacbot.vacuum["did"])
 
-        self._name = vacbot_name + "_last_clean_image"
+        self._name = self._vacbot_name + "_" + device_id
 
     @property
     def name(self):
         """Return the name of the device."""
         return self._name
+
+
+class DeebotLastCleanImageSensor(DeebotBaseSensor):
+    """Deebot Sensor"""
+
+    def __init__(self, vacbot, device_id):
+        """Initialize the Sensor."""
+        super(DeebotLastCleanImageSensor, self).__init__(vacbot, device_id)
 
     @property
     def state(self):
@@ -90,28 +98,12 @@ class DeebotLastCleanImageSensor(Entity):
         return "mdi:image-search"
 
 
-class DeebotWaterLevelSensor(Entity):
+class DeebotWaterLevelSensor(DeebotBaseSensor):
     """Deebot Sensor"""
 
     def __init__(self, vacbot, device_id):
         """Initialize the Sensor."""
-
-        self._state = STATE_UNKNOWN
-        self._vacbot = vacbot
-        self._id = device_id
-
-        if self._vacbot.vacuum.get("nick", None) is not None:
-            vacbot_name = "{}".format(self._vacbot.vacuum["nick"])
-        else:
-            # In case there is no nickname defined, use the device id
-            vacbot_name = "{}".format(self._vacbot.vacuum["did"])
-
-        self._name = vacbot_name + "_water_level"
-
-    @property
-    def name(self):
-        """Return the name of the device."""
-        return self._name
+        super(DeebotWaterLevelSensor, self).__init__(vacbot, device_id)
 
     @property
     def state(self):
@@ -126,28 +118,12 @@ class DeebotWaterLevelSensor(Entity):
         return "mdi:water"
 
 
-class DeebotComponentSensor(Entity):
+class DeebotComponentSensor(DeebotBaseSensor):
     """Deebot Sensor"""
 
     def __init__(self, vacbot, device_id):
         """Initialize the Sensor."""
-
-        self._state = STATE_UNKNOWN
-        self._vacbot = vacbot
-        self._id = device_id
-
-        if self._vacbot.vacuum.get("nick", None) is not None:
-            vacbot_name = "{}".format(self._vacbot.vacuum["nick"])
-        else:
-            # In case there is no nickname defined, use the device id
-            vacbot_name = "{}".format(self._vacbot.vacuum["did"])
-
-        self._name = vacbot_name + "_" + device_id
-
-    @property
-    def name(self):
-        """Return the name of the device."""
-        return self._name
+        super(DeebotComponentSensor, self).__init__(vacbot, device_id)
 
     @property
     def unit_of_measurement(self):
@@ -171,28 +147,12 @@ class DeebotComponentSensor(Entity):
             return "mdi:air-filter"
 
 
-class DeebotStatsSensor(Entity):
+class DeebotStatsSensor(DeebotBaseSensor):
     """Deebot Sensor"""
 
     def __init__(self, vacbot, device_id):
         """Initialize the Sensor."""
-
-        self._state = STATE_UNKNOWN
-        self._vacbot = vacbot
-        self._id = device_id
-
-        if self._vacbot.vacuum.get("nick", None) is not None:
-            vacbot_name = "{}".format(self._vacbot.vacuum["nick"])
-        else:
-            # In case there is no nickname defined, use the device id
-            vacbot_name = "{}".format(self._vacbot.vacuum["did"])
-
-        self._name = vacbot_name + "_" + device_id
-
-    @property
-    def name(self):
-        """Return the name of the device."""
-        return self._name
+        super(DeebotStatsSensor, self).__init__(vacbot, device_id)
 
     @property
     def unit_of_measurement(self):
@@ -225,29 +185,14 @@ class DeebotStatsSensor(Entity):
         elif self._id == 'stats_type':
             return "mdi:cog"
 
-class DeebotRoomSensor(Entity):
+class DeebotRoomSensor(DeebotBaseSensor):
     """Deebot Sensor"""
 
     def __init__(self, vacbot, roomId, roomDesc):
         """Initialize the Sensor."""
-
-        self._state = STATE_UNKNOWN
-        self._vacbot = vacbot
-        self._id = roomId
+        super(DeebotRoomSensor, self).__init__(vacbot, str(roomId))
         self._desc = roomDesc
-
-        if self._vacbot.vacuum.get("nick", None) is not None:
-            vacbot_name = "{}".format(self._vacbot.vacuum["nick"])
-        else:
-            # In case there is no nickname defined, use the device id
-            vacbot_name = "{}".format(self._vacbot.vacuum["did"])
-
-        self._name = vacbot_name + "_" + roomDesc
-
-    @property
-    def name(self):
-        """Return the name of the device."""
-        return self._name
+        self._name = self._vacbot_name + "_" + roomDesc
 
     @property
     def state(self):
