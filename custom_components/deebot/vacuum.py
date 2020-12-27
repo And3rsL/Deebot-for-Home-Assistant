@@ -1,11 +1,12 @@
 """Support for Deebot Vaccums."""
-import base64
-from typing import Optional, Dict, Any, Union, List
+from typing import Optional, Dict, Any
 
 from deebotozmo import *
 from homeassistant.util import slugify
 
 from . import HUB as hub
+from .binary_sensor import get_binary_sensors
+from .sensor import get_components, get_stats, get_general
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
@@ -16,7 +17,6 @@ CONF_SHOWCOLORROOMS = "show_color_rooms"
 DEEBOT_DEVICES = "deebot_devices"
 
 from homeassistant.components.vacuum import (
-    PLATFORM_SCHEMA,
     STATE_CLEANING,
     STATE_DOCKED,
     STATE_ERROR,
@@ -37,14 +37,14 @@ from homeassistant.components.vacuum import (
 _LOGGER = logging.getLogger(__name__)
 
 SUPPORT_DEEBOT = (
-    SUPPORT_BATTERY
-    | SUPPORT_FAN_SPEED
-    | SUPPORT_LOCATE
-    | SUPPORT_PAUSE
-    | SUPPORT_RETURN_HOME
-    | SUPPORT_SEND_COMMAND
-    | SUPPORT_START
-    | SUPPORT_STATE
+        SUPPORT_BATTERY
+        | SUPPORT_FAN_SPEED
+        | SUPPORT_LOCATE
+        | SUPPORT_PAUSE
+        | SUPPORT_RETURN_HOME
+        | SUPPORT_SEND_COMMAND
+        | SUPPORT_START
+        | SUPPORT_STATE
 )
 
 STATE_CODE_TO_STATE = {
@@ -58,6 +58,7 @@ STATE_CODE_TO_STATE = {
 
 ATTR_COMPONENT_PREFIX = "component_"
 
+
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Set up the Deebot vacuums."""
     if DEEBOT_DEVICES not in hass.data:
@@ -66,6 +67,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     for vacbot in hub.vacbots:
         vacuum = DeebotVacuum(hass, vacbot)
         add_devices([vacuum])
+
 
 class DeebotVacuum(VacuumEntity):
     """Deebot Vacuums"""
@@ -192,7 +194,7 @@ class DeebotVacuum(VacuumEntity):
             return
 
         if command == 'save_live_map':
-            if(self._live_map != self.device.live_map):
+            if (self._live_map != self.device.live_map):
                 self._live_map = self.device.live_map
                 with open(params['path'], "wb") as fh:
                     fh.write(base64.decodebytes(self.device.live_map))
@@ -204,7 +206,7 @@ class DeebotVacuum(VacuumEntity):
         await self.hass.async_add_executor_job(self.device.request_all_statuses)
 
         try:
-            if(self._live_map != self.device.live_map):
+            if (self._live_map != self.device.live_map):
                 self._live_map = self.device.live_map
                 with open(self._live_map_path, "wb") as fh:
                     fh.write(base64.decodebytes(self.device.live_map))
@@ -218,20 +220,34 @@ class DeebotVacuum(VacuumEntity):
         Implemented by platform classes. Convention for attribute names
         is lowercase snake_case.
         """
+        data = {}
         if self.device.getSavedRooms() is not None:
-            rooms: Dict[str, Union[int, List[int]]] = {}
             for r in self.device.getSavedRooms():
                 # convert room name to snake_case to meet the convention
-                room_name = "room_" + slugify(r["subtype"])
-                room_values = rooms.get(room_name)
+                room_name = f"rooms_{slugify(r['subtype'])}"
+                room_values = data.get(room_name)
                 if room_values is None:
-                    rooms[room_name] = r["id"]
+                    data[room_name] = r["id"]
                 elif isinstance(room_values, list):
                     room_values.append(r["id"])
                 else:
                     # Convert from int to list
-                    rooms[room_name] = [room_values, r["id"]]
+                    data[room_name] = [room_values, r["id"]]
 
-            return rooms
+        for sensor in get_general(self.device):
+            data[sensor.id] = sensor.state
 
-        return None
+        if len(get_stats(self.device)) > 0:
+            for sensor in get_stats(self.device):
+                data[sensor.id] = sensor.state
+
+        if len(get_components(self.device)) > 0:
+            for sensor in get_components(self.device):
+                name = f"components_{sensor.id}"
+                data[name] = sensor.state
+
+        if len(get_binary_sensors(self.device)) > 0:
+            for sensor in get_binary_sensors(self.device):
+                data[sensor.id] = sensor.state
+
+        return data

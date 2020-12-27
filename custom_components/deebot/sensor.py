@@ -28,24 +28,42 @@ STATE_CODE_TO_STATE = {
 }
 
 
+def get_general(vacbot: VacBot):
+    return [
+        DeebotLastCleanImageSensor(vacbot, "last_clean_image"),
+        DeebotWaterLevelSensor(vacbot, "water_level")
+    ]
+
+
+def get_components(vacbot: VacBot):
+    return [
+        DeebotComponentSensor(vacbot, COMPONENT_MAIN_BRUSH),
+        DeebotComponentSensor(vacbot, COMPONENT_SIDE_BRUSH),
+        DeebotComponentSensor(vacbot, COMPONENT_FILTER)
+    ]
+
+
+def get_stats(vacbot: VacBot):
+    return [
+        DeebotStatsSensor(vacbot, "stats_area"),
+        DeebotStatsSensor(vacbot, "stats_time"),
+        DeebotStatsSensor(vacbot, "stats_type")
+    ]
+
+
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Set up the Deebot sensor."""
     hub.update()
 
     for vacbot in hub.vacbots:
         # General
-        add_devices([DeebotLastCleanImageSensor(vacbot, "last_clean_image")], True)
-        add_devices([DeebotWaterLevelSensor(vacbot, "water_level")], True)
+        add_devices(get_general(vacbot), True)
 
         # Components
-        add_devices([DeebotComponentSensor(vacbot, COMPONENT_MAIN_BRUSH)], True)
-        add_devices([DeebotComponentSensor(vacbot, COMPONENT_SIDE_BRUSH)], True)
-        add_devices([DeebotComponentSensor(vacbot, COMPONENT_FILTER)], True)
+        add_devices(get_components(vacbot), True)
 
         # Stats
-        add_devices([DeebotStatsSensor(vacbot, "stats_area")], True)
-        add_devices([DeebotStatsSensor(vacbot, "stats_time")], True)
-        add_devices([DeebotStatsSensor(vacbot, "stats_type")], True)
+        add_devices(get_stats(vacbot), True)
 
 
 class DeebotBaseSensor(Entity):
@@ -70,6 +88,11 @@ class DeebotBaseSensor(Entity):
     def name(self):
         """Return the name of the device."""
         return self._name
+
+    @property
+    def id(self):
+        """Return the internal id"""
+        return self._id
 
 
 class DeebotLastCleanImageSensor(DeebotBaseSensor):
@@ -161,8 +184,8 @@ class DeebotStatsSensor(DeebotBaseSensor):
 
         if self._id == 'stats_area' and self._vacbot.stats_area is not None:
             return int(self._vacbot.stats_area)
-        elif self._id == 'stats_time'  and self._vacbot.stats_time is not None:
-            return int(self._vacbot.stats_time/60)
+        elif self._id == 'stats_time' and self._vacbot.stats_time is not None:
+            return int(self._vacbot.stats_time / 60)
         elif self._id == 'stats_type':
             return self._vacbot.stats_type
         else:

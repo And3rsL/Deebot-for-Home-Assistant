@@ -9,12 +9,16 @@ from . import HUB as hub
 _LOGGER = logging.getLogger(__name__)
 
 
+def get_binary_sensors(vacbot: VacBot):
+    return [DeebotMopAttachedBinarySensor(vacbot, "mop_attached")]
+
+
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Set up the Deebot binary sensor platform."""
     hub.update()
 
     for vacbot in hub.vacbots:
-        add_devices([DeebotMopAttachedBinarySensor(vacbot, "mop_attached")], True)
+        add_devices(get_binary_sensors(vacbot), True)
 
 
 class DeebotMopAttachedBinarySensor(BinarySensorEntity):
@@ -37,6 +41,11 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):
     def name(self):
         """Return the name of the device."""
         return self._name
+
+    @property
+    def id(self):
+        """Return the internal id"""
+        return self._id
 
     @property
     def is_on(self):
