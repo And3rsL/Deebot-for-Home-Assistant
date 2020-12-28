@@ -3,7 +3,7 @@
 
 # Home Assistant Custom Component for Ecovacs Deebot Ozmo 960/950/920/T8
 
-![Preview](prev.jpg)
+![Preview](images/prev.jpg)
 
 ## Description
 With this Home Assistant Custom Component you'll be able to 
@@ -37,12 +37,12 @@ deebot:
 
 You can find your robot id under settings and "About Deebot"
 
-![Preview](deviceid.jpg)
+![Preview](images/deviceid.jpg)
 
 ### Sensors
 This integration expose a number of sensors
 
-![Preview](sensors.jpg)
+![Preview](images/sensors.jpg)
 
 ### Live Map:
 
@@ -106,3 +106,5 @@ command: clean
 params:
   type: auto
 ```
+
+An SVG of the Deebot 950 can be found under [images](images/deboot950.svg)
