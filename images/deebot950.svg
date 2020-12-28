@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="800" version="1.1" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+ <g>
+  <g fill="#fffffd" stroke="#000">
+   <g fill-rule="evenodd">
+    <rect x="51.33" y="52.54" width="696.5" height="698.5" rx="303.7" ry="311.8" stroke-width="1.514"/>
+    <path d="m400 0.6448a399.4 399.4 0 0 0-399.3 399.4 399.4 399.4 0 0 0 0.0168 3.792l50.66-29.6v-9.882c0-172.7 135.5-311.8 303.7-311.8h89.09c168.2 0 303.7 139.1 303.7 311.8v9.985l51.51 30.2a399.4 399.4 0 0 0 0.0265-4.51v-0.0337a399.4 399.4 0 0 0-399.4-399.3zm-348.6 390.1-50.18 29.32a399.4 399.4 0 0 0 398.9 379.3 399.4 399.4 0 0 0 398.8-378.6l-51-29.9v48.38c0 172.7-135.5 311.8-303.7 311.8h-89.09c-168.2 0-303.7-139.1-303.7-311.8z" stroke-width="1.29"/>
+    <rect x="316.9" y="163.5" width="164.4" height="162.9" rx="70.23" ry="70.85" stroke-width="1.229"/>
+    <rect x="524.5" y="169.9" width="42.22" height="40.69" ry="17.63" stroke-width="1.229"/>
+   </g>
+   <path d="m74.71 243.1h221.4v4.007h-222.5z" stroke-width="1.221"/>
+   <path d="m499.7 243.1h224.7l1.352 4.013h-226z" stroke-width="1.229"/>
+   <rect x="296.2" y="143.5" width="203.4" height="203.4" rx="86.85" ry="88.49" fill-rule="evenodd" stroke-width="1.229"/>
+  </g>
+  <text transform="scale(.9997 1)" x="332.84354" y="604.22418" fill="#000000" font-family="sans-serif" font-size="26.22px" stroke="#000000" stroke-width="1.229" style="line-height:1.25" xml:space="preserve"><tspan x="332.84354" y="604.22418" fill="#000000" font-size="26.22px" stroke="#000000" stroke-width="1.229">DEEBOT</tspan></text>
+  <g transform="matrix(1.549 0 0 .9752 -95.15 -88.79)" fill="#fffffd" stroke="#000" stroke-width="1.25" aria-label="E">
+   <path d="m306.8 324.2h23.05v9.445h-18.12v5.496h17.36v7.176h-17.36v5.769h18.55v8.563h-23.49z" fill="#fffffd" stroke-width="1.25"/>
+  </g>
+ </g>
+</svg>
