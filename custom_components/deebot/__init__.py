@@ -15,7 +15,7 @@ from homeassistant.helpers import discovery
 from homeassistant.helpers.entity import Entity
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
 
-REQUIREMENTS = ['deebotozmo==1.7.2']
+REQUIREMENTS = ['deebotozmo==1.7.4']
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"

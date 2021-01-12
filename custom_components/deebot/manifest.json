@@ -1,9 +1,9 @@
 {
   "domain": "deebot",
-  "name": "deebot vacuum 960/950/920 Custom",
+  "name": "Deebot for Hassio",
   "documentation": "https://github.com/And3rsL/Deebot-for-hassio",
   "requirements": [
-    "deebotozmo==1.7.2"
+    "deebotozmo==1.7.4"
   ],
   "dependencies": [],
   "codeowners": ["@And3rsL"],
