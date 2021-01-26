@@ -85,7 +85,9 @@ class DeebotVacuum(VacuumEntity):
         self._fan_speed = None
         self._live_map = None
         self._live_map_path = hub.config.get(CONF_LIVEMAPPATH) + self._name + '_liveMap.png'
-
+        
+        self.device.refresh_statuses()
+        
         _LOGGER.debug("Vacuum initialized: %s", self.name)
 
     def on_fan_change(self, fan_speed):
@@ -114,13 +116,13 @@ class DeebotVacuum(VacuumEntity):
     @property
     def state(self):
         """Return the state of the vacuum cleaner."""
-        if self.device.vacuum_status is not None:
+        if self.device.vacuum_status is not None and self.device.is_available == True:
             return STATE_CODE_TO_STATE[self.device.vacuum_status]
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return True
+        return self.device.is_available
 
     async def async_return_to_base(self, **kwargs):
         """Set the vacuum cleaner to return to the dock."""
