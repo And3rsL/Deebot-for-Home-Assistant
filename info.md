@@ -50,6 +50,14 @@ deebot:
   livemappath: 'www/'   # Path where to save live_map (Each bot will have XXX_liveMap.png where XXX is the vacbot name)
 ``` 
 
+### Chinese server Configuration
+For chinese server username you require "short id" and password. short id look like "EXXXXXX". DO NOT USE YOUR MOBILE PHONE NUMBER, it wont work.
+
+country: cn
+continent: as (or ww)
+
+Since these servers are in china and unless you are close to china, don't expect very fast response.
+
 ### DeviceID
 You can find your robot id under settings and "About Deebot" or inside the robot (normally under dust bin)
 
@@ -150,6 +158,7 @@ map: camera.YOURLIVEMAP_CAMERA
 ```
 
 Something like this should be the result:
+
 ![Preview](images/custom_vacuum_card.jpg)
 
 ### Templates
@@ -217,11 +226,13 @@ params:
 ### Issues
 If you have an issue with this component, please file a GitHub Issue and include your Home Assistant logs in the report. To get full debug output from both the Ecovacs integration and the underlying deebotozmo library, place this in your configuration.yaml file:
 
+```
 logger:
   logs:
     homeassistant.components.deebot: debug
     homeassistant.components.vacuum.deebotozmo: debug
     deebotozmo: debug
+```
 
 YAML
 Warning: doing this will cause your authentication token to visible in your log files. Be sure to remove any tokens and other authentication details from your log before posting them in an issue.
