@@ -15,7 +15,7 @@ from homeassistant.helpers import discovery
 from homeassistant.helpers.entity import Entity
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
 
-REQUIREMENTS = ['deebotozmo==1.7.4']
+REQUIREMENTS = ['deebotozmo==1.7.5']
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
@@ -79,6 +79,7 @@ class DeebotHub(Entity):
         devices = self.ecovacs_api.devices()
         liveMapEnabled = domain_config.get(CONF_LIVEMAP)
         liveMapRooms = domain_config.get(CONF_SHOWCOLORROOMS)
+        country = domain_config.get(CONF_COUNTRY).lower()
         continent = domain_config.get(CONF_CONTINENT).lower()
         self.vacbots = []
 
@@ -87,20 +88,19 @@ class DeebotHub(Entity):
             if device['name'] in domain_config.get(CONF_DEVICEID):
                 vacbot = VacBot(
                     self.ecovacs_api.uid,
-                    self.ecovacs_api.REALM,
                     self.ecovacs_api.resource,
                     self.ecovacs_api.user_access_token,
                     device,
+                    country,
                     continent,
                     liveMapEnabled,
                     liveMapRooms
                 )
                 
-                vacbot.connect_and_wait_until_ready()
                 _LOGGER.debug("New vacbot found: " + device['name'])
 
                 self.vacbots.append(vacbot)
- 
+
         _LOGGER.debug("Hub initialized")
 
     @Throttle(timedelta(seconds=10))

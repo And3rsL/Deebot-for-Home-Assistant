@@ -120,7 +120,7 @@ class DeebotVacuum(VacuumEntity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.device.is_available
+        return True
 
     async def async_return_to_base(self, **kwargs):
         """Set the vacuum cleaner to return to the dock."""
