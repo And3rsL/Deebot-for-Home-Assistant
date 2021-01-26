@@ -3,7 +3,7 @@
   "name": "Deebot for Hassio",
   "documentation": "https://github.com/And3rsL/Deebot-for-hassio",
   "requirements": [
-    "deebotozmo==1.7.5"
+    "deebotozmo==1.7.6"
   ],
   "dependencies": [],
   "codeowners": ["@And3rsL"],
