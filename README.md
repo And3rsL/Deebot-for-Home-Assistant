@@ -84,7 +84,7 @@ Additional note: There are some issues during the password encoding. Using some 
 ### Sensors
 This integration expose a number of sensors
 
-* sensor.last_clean_image (A URL to the last success clean -- the image is on the ecovacs servers)
+* sensor.ROBOTNAME_last_clean_image (A URL to the last success clean -- the image is on the ecovacs servers)
 * sensor.ROBOTNAME_brush (% main brush)
 * sensor.ROBOTNAME_heap (% Filter)
 * sensor.ROBOTNAME_sidebrush (% Side Brush)
