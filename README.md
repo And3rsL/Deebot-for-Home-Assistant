@@ -239,4 +239,4 @@ Warning: doing this will cause your authentication token to visible in your log 
 
 ### Misc
 
-An SVG of the Deebot 950 can be found under [images](images/deeboot950.svg)
+An SVG of the Deebot 950 can be found under [images](images/deebot950.svg)
