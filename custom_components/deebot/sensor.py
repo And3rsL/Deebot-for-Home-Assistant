@@ -1,51 +1,41 @@
 """Support for Deebot Sensor."""
 from typing import Optional
-
-from deebotozmo import *
-from homeassistant.const import (STATE_UNKNOWN)
+import logging
+from deebotozmo import (
+    EcoVacsAPI,
+    COMPONENT_FILTER,
+    COMPONENT_SIDE_BRUSH,
+    COMPONENT_MAIN_BRUSH,
+)
+from homeassistant.const import STATE_UNKNOWN
 from homeassistant.helpers.entity import Entity
-
-from . import HUB as hub
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-from homeassistant.components.vacuum import (
-    STATE_CLEANING,
-    STATE_DOCKED,
-    STATE_ERROR,
-    STATE_IDLE,
-    STATE_PAUSED,
-    STATE_RETURNING,
-)
 
-STATE_CODE_TO_STATE = {
-    'STATE_IDLE': STATE_IDLE,
-    'STATE_CLEANING': STATE_CLEANING,
-    'STATE_RETURNING': STATE_RETURNING,
-    'STATE_DOCKED': STATE_DOCKED,
-    'STATE_ERROR': STATE_ERROR,
-    'STATE_PAUSED': STATE_PAUSED,
-}
+async def async_setup_entry(hass, config_entry, async_add_devices):
+    """Add sensors for passed config_entry in HA."""
+    hub = hass.data[DOMAIN][config_entry.entry_id]
 
-
-def setup_platform(hass, config, add_devices, discovery_info=None):
-    """Set up the Deebot sensor."""
-    hub.update()
-
+    new_devices = []
     for vacbot in hub.vacbots:
         # General
-        add_devices([DeebotLastCleanImageSensor(vacbot, "last_clean_image")], True)
-        add_devices([DeebotWaterLevelSensor(vacbot, "water_level")], True)
+        new_devices.append(DeebotLastCleanImageSensor(vacbot, "last_clean_image"))
+        new_devices.append(DeebotWaterLevelSensor(vacbot, "water_level"))
 
         # Components
-        add_devices([DeebotComponentSensor(vacbot, COMPONENT_MAIN_BRUSH)], True)
-        add_devices([DeebotComponentSensor(vacbot, COMPONENT_SIDE_BRUSH)], True)
-        add_devices([DeebotComponentSensor(vacbot, COMPONENT_FILTER)], True)
+        new_devices.append(DeebotComponentSensor(vacbot, COMPONENT_MAIN_BRUSH))
+        new_devices.append(DeebotComponentSensor(vacbot, COMPONENT_SIDE_BRUSH))
+        new_devices.append(DeebotComponentSensor(vacbot, COMPONENT_FILTER))
 
         # Stats
-        add_devices([DeebotStatsSensor(vacbot, "stats_area")], True)
-        add_devices([DeebotStatsSensor(vacbot, "stats_time")], True)
-        add_devices([DeebotStatsSensor(vacbot, "stats_type")], True)
+        new_devices.append(DeebotStatsSensor(vacbot, "stats_area"))
+        new_devices.append(DeebotStatsSensor(vacbot, "stats_time"))
+        new_devices.append(DeebotStatsSensor(vacbot, "stats_type"))
+
+    if new_devices:
+        async_add_devices(new_devices)
 
 
 class DeebotBaseSensor(Entity):
@@ -66,11 +56,17 @@ class DeebotBaseSensor(Entity):
 
         self._name = self._vacbot_name + "_" + device_id
 
+        self._vacbot.lifespanEvents.subscribe(lambda _: self.schedule_update_ha_state())
+
     @property
     def name(self):
         """Return the name of the device."""
         return self._name
 
+    @property
+    def unique_id(self) -> str:
+        """Return an unique ID."""
+        return self._vacbot.vacuum.get("did", None) + "_" + self._id
 
 class DeebotLastCleanImageSensor(DeebotBaseSensor):
     """Deebot Sensor"""
@@ -121,7 +117,7 @@ class DeebotComponentSensor(DeebotBaseSensor):
     @property
     def unit_of_measurement(self):
         """Return the unit of measurement."""
-        return '%'
+        return "%"
 
     @property
     def state(self):
@@ -150,20 +146,20 @@ class DeebotStatsSensor(DeebotBaseSensor):
     @property
     def unit_of_measurement(self):
         """Return the unit of measurement."""
-        if self._id == 'stats_area':
+        if self._id == "stats_area":
             return "mq"
-        elif self._id == 'stats_time':
+        elif self._id == "stats_time":
             return "min"
 
     @property
     def state(self):
         """Return the state of the vacuum cleaner."""
 
-        if self._id == 'stats_area' and self._vacbot.stats_area is not None:
+        if self._id == "stats_area" and self._vacbot.stats_area is not None:
             return int(self._vacbot.stats_area)
-        elif self._id == 'stats_time'  and self._vacbot.stats_time is not None:
-            return int(self._vacbot.stats_time/60)
-        elif self._id == 'stats_type':
+        elif self._id == "stats_time" and self._vacbot.stats_time is not None:
+            return int(self._vacbot.stats_time / 60)
+        elif self._id == "stats_type":
             return self._vacbot.stats_type
         else:
             return STATE_UNKNOWN
@@ -171,9 +167,9 @@ class DeebotStatsSensor(DeebotBaseSensor):
     @property
     def icon(self) -> Optional[str]:
         """Return the icon to use in the frontend, if any."""
-        if self._id == 'stats_area':
+        if self._id == "stats_area":
             return "mdi:floor-plan"
-        elif self._id == 'stats_time':
+        elif self._id == "stats_time":
             return "mdi:timer-outline"
-        elif self._id == 'stats_type':
+        elif self._id == "stats_type":
             return "mdi:cog"
