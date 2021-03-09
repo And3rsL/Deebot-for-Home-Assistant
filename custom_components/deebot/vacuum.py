@@ -77,12 +77,12 @@ class DeebotVacuum(VacuumEntity):
         try:
             if self._live_map != map:
                 self._live_map = map
-                with open("/workspaces/core/config/" + self._live_map_path, "wb") as fh:
+                with open(self._live_map_path, "wb") as fh:
                     fh.write(base64.decodebytes(map))
         except KeyError:
             _LOGGER.warning(
                 "Can't access local folder: %s",
-                "/workspaces/core/config/" + self._live_map_path,
+                self._live_map_path,
             )
 
     @property
