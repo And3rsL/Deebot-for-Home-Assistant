@@ -25,9 +25,6 @@ DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_CONTINENT): str,
         vol.Optional(CONF_LIVEMAP, default=False): bool,
         vol.Optional(CONF_SHOWCOLORROOMS, default=False): bool,
-        vol.Optional(
-            CONF_LIVEMAPPATH, description={"suggested_value": "www/"}, default="www/"
-        ): str,
     }
 )
 
@@ -42,9 +39,6 @@ async def validate_input(hass: core.HomeAssistant, data: dict):
 
     if len(data[CONF_CONTINENT]) != 2:
         raise InvalidContinent
-
-    if len(data[CONF_LIVEMAPPATH]) == 0:
-        raise InvalidLiveMapPath
 
     foundDevices = ConfigEntryRetriveRobots(hass, data)
 
@@ -83,8 +77,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors[CONF_COUNTRY] = "invalid_country"
             except InvalidContinent:
                 errors[CONF_CONTINENT] = "invalid_continent"
-            except InvalidLiveMapPath:
-                errors[CONF_LIVEMAPPATH] = "invalid_path"
             except Exception:
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
@@ -144,10 +136,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 class CannotConnect(exceptions.HomeAssistantError):
     """Error to indicate we cannot connect."""
-
-
-class InvalidLiveMapPath(exceptions.HomeAssistantError):
-    """Error to indicate there is an invalid hostname."""
 
 
 class InvalidCountry(exceptions.HomeAssistantError):

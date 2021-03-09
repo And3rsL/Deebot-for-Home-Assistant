@@ -68,6 +68,7 @@ class DeebotBaseSensor(Entity):
         """Return an unique ID."""
         return self._vacbot.vacuum.get("did", None) + "_" + self._id
 
+
 class DeebotLastCleanImageSensor(DeebotBaseSensor):
     """Deebot Sensor"""
 

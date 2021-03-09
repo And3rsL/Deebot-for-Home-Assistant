@@ -54,9 +54,6 @@ class DeebotVacuum(VacuumEntity):
 
         self._fan_speed = None
         self._live_map = None
-        self._live_map_path = (
-            hub.config.get(CONF_LIVEMAPPATH) + self._name + "_liveMap.png"
-        )
 
         self.att_data = {}
 
@@ -67,23 +64,10 @@ class DeebotVacuum(VacuumEntity):
         self.device.statusEvents.subscribe(lambda _: self.schedule_update_ha_state())
         self.device.batteryEvents.subscribe(lambda _: self.schedule_update_ha_state())
         self.device.roomEvents.subscribe(lambda _: self.schedule_update_ha_state())
-        self.device.livemapEvents.subscribe(self.on_map_updated)
         self.device.fanspeedEvents.subscribe(self.on_fan_change)
 
     def on_fan_change(self, fan_speed):
         self._fan_speed = fan_speed
-
-    def on_map_updated(self, map):
-        try:
-            if self._live_map != map:
-                self._live_map = map
-                with open(self._live_map_path, "wb") as fh:
-                    fh.write(base64.decodebytes(map))
-        except KeyError:
-            _LOGGER.warning(
-                "Can't access local folder: %s",
-                self._live_map_path,
-            )
 
     @property
     def should_poll(self) -> bool:
@@ -194,12 +178,6 @@ class DeebotVacuum(VacuumEntity):
         if command == "refresh_live_map":
             await self.hass.async_add_executor_job(self.device.refresh_liveMap)
             return
-
-        if command == "save_live_map":
-            if self._live_map != self.device.live_map:
-                self._live_map = self.device.live_map
-                with open(params["path"], "wb") as fh:
-                    fh.write(base64.decodebytes(self.device.live_map))
 
         await self.hass.async_add_executor_job(self.device.exc_command, command, params)
 

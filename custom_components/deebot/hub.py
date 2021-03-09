@@ -37,7 +37,10 @@ class DeebotHub:
         )
 
         devices = self.ecovacs_api.devices()
+
         liveMapEnabled = domain_config.get(CONF_LIVEMAP)
+        self.liveMapEnabled = liveMapEnabled
+
         liveMapRooms = domain_config.get(CONF_SHOWCOLORROOMS)
         country = domain_config.get(CONF_COUNTRY).lower()
         continent = domain_config.get(CONF_CONTINENT).lower()

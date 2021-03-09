@@ -8,7 +8,7 @@ from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["sensor", "binary_sensor", "vacuum"]
+PLATFORMS = ["sensor", "binary_sensor", "vacuum", "camera"]
 
 
 async def async_setup(hass: HomeAssistant, config: dict):
@@ -24,7 +24,9 @@ async def async_setup(hass: HomeAssistant, config: dict):
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Store an instance of the "connecting" class that does the work of speaking
     # with your actual devices.
-    hass.data[DOMAIN][entry.entry_id] = await hass.async_add_executor_job(hub.DeebotHub,hass, entry.data)
+    hass.data[DOMAIN][entry.entry_id] = await hass.async_add_executor_job(
+        hub.DeebotHub, hass, entry.data
+    )
 
     # This creates each HA object for each platform your device requires.
     # It's done by calling the `async_setup_entry` function in each platform module.
