@@ -1,6 +1,7 @@
 {
   "domain": "deebot",
   "name": "Deebot for Hassio",
+  "version": "v0.0.0",
   "config_flow": true,
   "documentation": "https://github.com/And3rsL/Deebot-for-hassio",
   "requirements": [

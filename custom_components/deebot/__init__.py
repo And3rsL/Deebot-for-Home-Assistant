@@ -4,7 +4,7 @@ import asyncio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from . import hub
-from .const import DOMAIN
+from .const import DOMAIN, STARTUP
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -17,6 +17,9 @@ async def async_setup(hass: HomeAssistant, config: dict):
     # common/preferred as it allows a separate instance of your class for each
     # instance that has been created in the UI.
     hass.data.setdefault(DOMAIN, {})
+
+    # Print startup message
+    _LOGGER.info(STARTUP)
 
     return True
 
