@@ -218,7 +218,7 @@ Possible values: auto
 example:
 
 entity_id: vacuum.YOUR_ROBOT_NAME
-command: clean
+command: auto_clean
 params:
   type: auto
 ```
