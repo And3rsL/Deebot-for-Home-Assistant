@@ -35,6 +35,7 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):
             self._vacbot_name = "{}".format(self._vacbot.vacuum["did"])
 
         self._name = self._vacbot_name + "_" + device_id
+        self._vacbot.waterEvents.subscribe(lambda _: self.schedule_update_ha_state())
 
     @property
     def unique_id(self) -> str:
@@ -45,6 +46,10 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):
     def name(self):
         """Return the name of the device."""
         return self._name
+
+    @property
+    def should_poll(self) -> bool:
+        return False
 
     @property
     def is_on(self):
