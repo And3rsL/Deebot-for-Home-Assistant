@@ -63,8 +63,3 @@ class DeeboLiveCamera(Camera):
         """Return a still image response from the camera."""
 
         return base64.decodebytes(self._vacbot.live_map)
-
-    def camera_image(self):
-        """Return a still image response from the camera."""
-
-        return base64.decodebytes(self._vacbot.live_map)
