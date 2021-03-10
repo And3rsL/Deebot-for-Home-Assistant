@@ -1,16 +1,18 @@
 """Support for Deebot Vaccums."""
-import base64
 import logging
-from typing import Optional, Dict, Any, Union, List
+from typing import Optional, Dict, Any
+
 from deebotozmo import (
-    EcoVacsAPI,
     FAN_SPEED_QUIET,
     FAN_SPEED_NORMAL,
     FAN_SPEED_MAX,
-    FAN_SPEED_MAXPLUS,
+    FAN_SPEED_MAXPLUS, VacBot,
 )
+from homeassistant.core import HomeAssistant
 from homeassistant.util import slugify
+
 from .const import *
+from .helpers import get_device_info
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,7 +34,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 
     new_devices = []
     for vacbot in hub.vacbots:
-        new_devices.append(DeebotVacuum(hass, vacbot, hub))
+        new_devices.append(DeebotVacuum(hass, vacbot))
 
     if new_devices:
         async_add_devices(new_devices)
@@ -41,7 +43,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 class DeebotVacuum(VacuumEntity):
     """Deebot Vacuums"""
 
-    def __init__(self, hass, vacbot, hub):
+    def __init__(self, hass: HomeAssistant, vacbot: VacBot):
         """Initialize the Deebot Vacuum."""
         self._hass = hass
         self.device = vacbot
@@ -208,3 +210,7 @@ class DeebotVacuum(VacuumEntity):
         self.att_data["status"] = STATE_CODE_TO_STATE[self.device.vacuum_status]
 
         return self.att_data
+
+    @property
+    def device_info(self) -> Optional[Dict[str, Any]]:
+        return get_device_info(self.device)

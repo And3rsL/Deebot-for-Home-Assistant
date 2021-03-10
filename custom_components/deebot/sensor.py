@@ -1,6 +1,6 @@
 """Support for Deebot Sensor."""
 import logging
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from deebotozmo import (
     COMPONENT_FILTER,
@@ -11,6 +11,7 @@ from homeassistant.const import STATE_UNKNOWN
 from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN
+from .helpers import get_device_info
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -74,6 +75,10 @@ class DeebotBaseSensor(Entity):
     @property
     def should_poll(self) -> bool:
         return False
+
+    @property
+    def device_info(self) -> Optional[Dict[str, Any]]:
+        return get_device_info(self._vacbot)
 
 
 class DeebotLastCleanImageSensor(DeebotBaseSensor):

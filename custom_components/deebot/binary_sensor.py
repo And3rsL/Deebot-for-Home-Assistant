@@ -1,10 +1,11 @@
 """Support for Deebot Sensor."""
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from deebotozmo import *
 from homeassistant.components.binary_sensor import BinarySensorEntity
 
 from .const import DOMAIN
+from .helpers import get_device_info
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -64,6 +65,10 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):
     def entity_registry_enabled_default(self) -> bool:
         """Return if the entity should be enabled when first added to the entity registry."""
         return False
+
+    @property
+    def device_info(self) -> Optional[Dict[str, Any]]:
+        return get_device_info(self._vacbot)
 
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""

@@ -1,11 +1,12 @@
 """Support for Deebot Vaccums."""
 import base64
 import logging
+from typing import Optional, Dict, Any
 
-from homeassistant.components.camera import PLATFORM_SCHEMA, Camera
-from typing import Optional, Dict, Any, Union, List
-from homeassistant.util import slugify
+from homeassistant.components.camera import Camera
+
 from .const import *
+from .helpers import get_device_info
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,6 +54,10 @@ class DeeboLiveCamera(Camera):
     def unique_id(self) -> str:
         """Return an unique ID."""
         return self._vacbot.vacuum.get("did", None) + "_" + self._id
+
+    @property
+    def device_info(self) -> Optional[Dict[str, Any]]:
+        return get_device_info(self._vacbot)
 
     async def async_camera_image(self):
         """Return a still image response from the camera."""
