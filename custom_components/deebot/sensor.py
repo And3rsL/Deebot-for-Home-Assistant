@@ -68,6 +68,11 @@ class DeebotBaseSensor(Entity):
         """Return an unique ID."""
         return self._vacbot.vacuum.get("did", None) + "_" + self._id
 
+    @property
+    def entity_registry_enabled_default(self) -> bool:
+        """Return if the entity should be enabled when first added to the entity registry."""
+        return False
+
 
 class DeebotLastCleanImageSensor(DeebotBaseSensor):
     """Deebot Sensor"""

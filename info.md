@@ -60,7 +60,8 @@ For some countries, you will need to set continent to ww (meaning worldwide.) Th
 Additional note: There are some issues during the password encoding. Using some special characters (e.g., -) in your password does not work.
 
 ### Sensors
-This integration expose a number of sensors
+This integration expose a number of sensors.
+**All sensors are disabled by default.** You can enable only the required ones.
 
 * sensor.ROBOTNAME_last_clean_image (A URL to the last success clean -- the image is on the ecovacs servers)
 * sensor.ROBOTNAME_brush (% main brush)

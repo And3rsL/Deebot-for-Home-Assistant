@@ -54,3 +54,8 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):
     def icon(self) -> Optional[str]:
         """Return the icon to use in the frontend, if any."""
         return "mdi:water" if self.is_on else "mdi:water-off"
+
+    @property
+    def entity_registry_enabled_default(self) -> bool:
+        """Return if the entity should be enabled when first added to the entity registry."""
+        return False
