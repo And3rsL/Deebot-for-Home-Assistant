@@ -56,8 +56,6 @@ class DeebotBaseSensor(Entity):
 
         self._name = self._vacbot_name + "_" + device_id
 
-        self._vacbot.lifespanEvents.subscribe(lambda _: self.schedule_update_ha_state())
-
     @property
     def name(self):
         """Return the name of the device."""
@@ -80,6 +78,7 @@ class DeebotLastCleanImageSensor(DeebotBaseSensor):
     def __init__(self, vacbot, device_id):
         """Initialize the Sensor."""
         super(DeebotLastCleanImageSensor, self).__init__(vacbot, device_id)
+        self._vacbot.cleanLogsEvents.subscribe(lambda _: self.schedule_update_ha_state())
 
     @property
     def state(self):
@@ -99,6 +98,7 @@ class DeebotWaterLevelSensor(DeebotBaseSensor):
     def __init__(self, vacbot, device_id):
         """Initialize the Sensor."""
         super(DeebotWaterLevelSensor, self).__init__(vacbot, device_id)
+        self._vacbot.waterEvents.subscribe(lambda _: self.schedule_update_ha_state())
 
     @property
     def state(self):
@@ -119,6 +119,7 @@ class DeebotComponentSensor(DeebotBaseSensor):
     def __init__(self, vacbot, device_id):
         """Initialize the Sensor."""
         super(DeebotComponentSensor, self).__init__(vacbot, device_id)
+        self._vacbot.lifespanEvents.subscribe(lambda _: self.schedule_update_ha_state())
 
     @property
     def unit_of_measurement(self):
@@ -148,6 +149,7 @@ class DeebotStatsSensor(DeebotBaseSensor):
     def __init__(self, vacbot, device_id):
         """Initialize the Sensor."""
         super(DeebotStatsSensor, self).__init__(vacbot, device_id)
+        self._vacbot.statsEvents.subscribe(lambda _: self.schedule_update_ha_state())
 
     @property
     def unit_of_measurement(self):
