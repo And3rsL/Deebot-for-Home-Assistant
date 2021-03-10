@@ -3,7 +3,6 @@ from typing import Optional
 
 from deebotozmo import *
 from homeassistant.components.binary_sensor import BinarySensorEntity
-from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 
@@ -37,7 +36,6 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):
             self._vacbot_name = "{}".format(self._vacbot.vacuum["did"])
 
         self._name = self._vacbot_name + "_" + device_id
-        self._vacbot.waterEvents.subscribe(lambda _: self.schedule_update_ha_state())
 
     @property
     def unique_id(self) -> str:
@@ -66,7 +64,7 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):
     def entity_registry_enabled_default(self) -> bool:
         """Return if the entity should be enabled when first added to the entity registry."""
         return False
-    
+
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
         listener = self._vacbot.waterEvents.subscribe(lambda _: self.schedule_update_ha_state())
