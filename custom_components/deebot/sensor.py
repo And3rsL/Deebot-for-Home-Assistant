@@ -1,14 +1,15 @@
 """Support for Deebot Sensor."""
-from typing import Optional
 import logging
+from typing import Optional
+
 from deebotozmo import (
-    EcoVacsAPI,
     COMPONENT_FILTER,
     COMPONENT_SIDE_BRUSH,
     COMPONENT_MAIN_BRUSH,
 )
 from homeassistant.const import STATE_UNKNOWN
 from homeassistant.helpers.entity import Entity
+
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -43,7 +44,6 @@ class DeebotBaseSensor(Entity):
 
     def __init__(self, vacbot, device_id):
         """Initialize the Sensor."""
-
         self._state = STATE_UNKNOWN
         self._vacbot = vacbot
         self._id = device_id
@@ -71,6 +71,10 @@ class DeebotBaseSensor(Entity):
         """Return if the entity should be enabled when first added to the entity registry."""
         return False
 
+    @property
+    def should_poll(self) -> bool:
+        return False
+
 
 class DeebotLastCleanImageSensor(DeebotBaseSensor):
     """Deebot Sensor"""
@@ -78,7 +82,6 @@ class DeebotLastCleanImageSensor(DeebotBaseSensor):
     def __init__(self, vacbot, device_id):
         """Initialize the Sensor."""
         super(DeebotLastCleanImageSensor, self).__init__(vacbot, device_id)
-        self._vacbot.cleanLogsEvents.subscribe(lambda _: self.schedule_update_ha_state())
 
     @property
     def state(self):
@@ -91,6 +94,11 @@ class DeebotLastCleanImageSensor(DeebotBaseSensor):
         """Return the icon to use in the frontend, if any."""
         return "mdi:image-search"
 
+    async def async_added_to_hass(self) -> None:
+        """Set up the event listeners now that hass is ready."""
+        listener = self._vacbot.cleanLogsEvents.subscribe(lambda _: self.schedule_update_ha_state())
+        self.async_on_remove(self._vacbot.cleanLogsEvents.unsubscribe(listener))
+
 
 class DeebotWaterLevelSensor(DeebotBaseSensor):
     """Deebot Sensor"""
@@ -98,7 +106,6 @@ class DeebotWaterLevelSensor(DeebotBaseSensor):
     def __init__(self, vacbot, device_id):
         """Initialize the Sensor."""
         super(DeebotWaterLevelSensor, self).__init__(vacbot, device_id)
-        self._vacbot.waterEvents.subscribe(lambda _: self.schedule_update_ha_state())
 
     @property
     def state(self):
@@ -112,6 +119,11 @@ class DeebotWaterLevelSensor(DeebotBaseSensor):
         """Return the icon to use in the frontend, if any."""
         return "mdi:water"
 
+    async def async_added_to_hass(self) -> None:
+        """Set up the event listeners now that hass is ready."""
+        listener = self._vacbot.waterEvents.subscribe(lambda _: self.schedule_update_ha_state())
+        self.async_on_remove(self._vacbot.cleanLogsEvents.unsubscribe(listener))
+
 
 class DeebotComponentSensor(DeebotBaseSensor):
     """Deebot Sensor"""
@@ -119,7 +131,6 @@ class DeebotComponentSensor(DeebotBaseSensor):
     def __init__(self, vacbot, device_id):
         """Initialize the Sensor."""
         super(DeebotComponentSensor, self).__init__(vacbot, device_id)
-        self._vacbot.lifespanEvents.subscribe(lambda _: self.schedule_update_ha_state())
 
     @property
     def unit_of_measurement(self):
@@ -142,6 +153,11 @@ class DeebotComponentSensor(DeebotBaseSensor):
         elif self._id == COMPONENT_FILTER:
             return "mdi:air-filter"
 
+    async def async_added_to_hass(self) -> None:
+        """Set up the event listeners now that hass is ready."""
+        listener = self._vacbot.lifespanEvents.subscribe(lambda _: self.schedule_update_ha_state())
+        self.async_on_remove(self._vacbot.cleanLogsEvents.unsubscribe(listener))
+
 
 class DeebotStatsSensor(DeebotBaseSensor):
     """Deebot Sensor"""
@@ -149,7 +165,6 @@ class DeebotStatsSensor(DeebotBaseSensor):
     def __init__(self, vacbot, device_id):
         """Initialize the Sensor."""
         super(DeebotStatsSensor, self).__init__(vacbot, device_id)
-        self._vacbot.statsEvents.subscribe(lambda _: self.schedule_update_ha_state())
 
     @property
     def unit_of_measurement(self):
@@ -181,3 +196,8 @@ class DeebotStatsSensor(DeebotBaseSensor):
             return "mdi:timer-outline"
         elif self._id == "stats_type":
             return "mdi:cog"
+
+    async def async_added_to_hass(self) -> None:
+        """Set up the event listeners now that hass is ready."""
+        listener = self._vacbot.statsEvents.subscribe(lambda _: self.schedule_update_ha_state())
+        self.async_on_remove(self._vacbot.cleanLogsEvents.unsubscribe(listener))
