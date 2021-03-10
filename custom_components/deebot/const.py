@@ -19,7 +19,7 @@ from homeassistant.components.vacuum import (
 
 DOMAIN = "deebot"
 INTEGRATION_VERSION = "main"
-ISSUE_URL = "https://github.com/And3rsL/Deebot-for-hassio/issues"
+ISSUE_URL = "https://github.com/And3rsL/Deebot-for-Home-Assistant/issues"
 
 STARTUP = f"""
 -------------------------------------------------------------------

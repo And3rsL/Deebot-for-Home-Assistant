@@ -31,24 +31,7 @@ With this Home Assistant Custom Component you'll be able to
 * and much more...
 
 ## Configuration
-To add your Ecovacs devices into your Home Assistant installation, add the following to your configuration.yaml file:
-
-```
-# required fields
-deebot:
-  username: YOUR_ECOVACS_USERNAME
-  password: YOUR_ECOVACS_PASSWORD
-  country: YOUR_TWO_LETTER_COUNTRY_CODE
-  continent: YOUR_TWO_LETTER_CONTINENT_CODE
-  deviceid:
-    - YOUR_ROBOT_ID
-    - YOUR_ROBOT_ID2
-    - etc...
-  # Optional
-  live_map: True                    # Enable Live Map.. may cause issues on low power hardware | Default: True
-  show_color_rooms: False           # Enable draw room colors as in the app.. BE Carefull, very experimental. first thing to disable if there is any issue | Default: False
-  livemappath: 'www/'   # Path where to save live_map (Each bot will have XXX_liveMap.png where XXX is the vacbot name)
-``` 
+To add your Ecovacs devices into your Home Assistant installation, follow the steps in Home Assistant -> Settings -> Integration -> Add -> Deebot for Home Assistant
 
 ### Chinese server Configuration
 For chinese server username you require "short id" and password. short id look like "EXXXXXX". DO NOT USE YOUR MOBILE PHONE NUMBER, it wont work.
@@ -57,11 +40,6 @@ country: cn
 continent: as (or ww)
 
 Since these servers are in china and unless you are close to china, don't expect very fast response.
-
-### DeviceID
-You can find your robot id under settings and "About Deebot" or inside the robot (normally under dust bin)
-
-![Preview](images/deviceid.jpg)
 
 ### Country and Continent code
 #### country:
@@ -95,26 +73,8 @@ This integration expose a number of sensors
 * binary_sensor.ROBOTNAME_mop_attached (On/off is mop is attached)
 
 ### Live Map:
-If is true live_map it will try to generate a live map in the specified folder
-you can set a generic camera example:
-
-Add Camera in configuration.yaml
-
-```
-camera:
-  - platform: generic
-    name: Deebot_live_map
-    still_image_url: "http://YOURLOCALIP:8123/local/YOUR_ROBOT_NAME_liveMap.png" #Example configuration for livemappath: 'www/'
-    verify_ssl: false
-```
-
-YAML interface:
-```
-type: picture-entity
-entity: vacuum.YOUR_ROBOT_NAME
-aspect_ratio: 50%
-camera_image: camera.deebot_live_map
-```
+If is true live_map it will try to generate a live map camera feed
+* camera.ROBOTNAME_liveMap
 
 ### Suggested yaml component
 A suggested custom lovelace card that i use is: vacuum-card by denysdovhan link: https://github.com/denysdovhan/vacuum-card
@@ -218,7 +178,7 @@ Possible values: auto
 example:
 
 entity_id: vacuum.YOUR_ROBOT_NAME
-command: clean
+command: auto_clean
 params:
   type: auto
 ```
