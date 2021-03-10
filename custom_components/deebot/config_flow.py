@@ -40,9 +40,7 @@ async def validate_input(hass: core.HomeAssistant, data: dict):
     if len(data[CONF_CONTINENT]) != 2:
         raise InvalidContinent
 
-    foundDevices = ConfigEntryRetriveRobots(hass, data)
-
-    return foundDevices
+    return await hass.async_add_executor_job(ConfigEntryRetriveRobots, hass, data)
 
 
 def ConfigEntryRetriveRobots(hass: core.HomeAssistant, domain_config):
@@ -58,10 +56,10 @@ def ConfigEntryRetriveRobots(hass: core.HomeAssistant, domain_config):
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Hello World."""
+    """Handle a config flow for Deebot."""
 
     VERSION = 1
-    CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_PUSH
+    CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
 
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
