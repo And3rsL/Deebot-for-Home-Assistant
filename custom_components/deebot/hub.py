@@ -67,6 +67,10 @@ class DeebotHub:
 
         _LOGGER.debug("Hub initialized")
 
+    def disconnect(self):
+        for device in self.vacbots:
+            device.disconnect()
+
     @property
     def name(self):
         """ Return the name of the hub."""
