@@ -111,7 +111,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 else:
                     self.data[CONF_DEVICEID] = user_input
                     return self.async_create_entry(
-                        title="Ecovacs vacuum custom integration", data=self.data
+                        title=self.data[CONF_USERNAME], data=self.data
                     )
             except Exception:
                 _LOGGER.exception("Unexpected exception")

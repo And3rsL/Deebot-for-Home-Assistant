@@ -19,5 +19,6 @@ def get_device_info(vacBot: VacBot):
         "identifiers": identifiers,
         "name": device.get("nick", "Deebot vacuum"),
         "manufacturer": "Ecovacs",
-        "model": "Deebot"
+        "model": device.get("deviceName", "Deebot vacuum"),
+        "sw_version": vacBot.fwversion,
     }
