@@ -72,5 +72,5 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):
 
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
-        listener = self._vacbot.waterEvents.subscribe(lambda _: self.schedule_update_ha_state())
-        self.async_on_remove(self._vacbot.waterEvents.unsubscribe(listener))
+        listener: EventListener = self._vacbot.waterEvents.subscribe(lambda _: self.schedule_update_ha_state())
+        self.async_on_remove(listener.unsubscribe())

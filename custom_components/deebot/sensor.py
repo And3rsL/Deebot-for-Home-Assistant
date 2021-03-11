@@ -5,7 +5,7 @@ from typing import Optional, Dict, Any
 from deebotozmo import (
     COMPONENT_FILTER,
     COMPONENT_SIDE_BRUSH,
-    COMPONENT_MAIN_BRUSH,
+    COMPONENT_MAIN_BRUSH, EventListener,
 )
 from homeassistant.const import STATE_UNKNOWN
 from homeassistant.helpers.entity import Entity
@@ -101,8 +101,8 @@ class DeebotLastCleanImageSensor(DeebotBaseSensor):
 
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
-        listener = self._vacbot.cleanLogsEvents.subscribe(lambda _: self.schedule_update_ha_state())
-        self.async_on_remove(self._vacbot.cleanLogsEvents.unsubscribe(listener))
+        listener: EventListener = self._vacbot.cleanLogsEvents.subscribe(lambda _: self.schedule_update_ha_state())
+        self.async_on_remove(listener.unsubscribe())
 
 
 class DeebotWaterLevelSensor(DeebotBaseSensor):
@@ -126,8 +126,8 @@ class DeebotWaterLevelSensor(DeebotBaseSensor):
 
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
-        listener = self._vacbot.waterEvents.subscribe(lambda _: self.schedule_update_ha_state())
-        self.async_on_remove(self._vacbot.waterEvents.unsubscribe(listener))
+        listener: EventListener = self._vacbot.waterEvents.subscribe(lambda _: self.schedule_update_ha_state())
+        self.async_on_remove(listener.unsubscribe())
 
 
 class DeebotComponentSensor(DeebotBaseSensor):
@@ -160,8 +160,8 @@ class DeebotComponentSensor(DeebotBaseSensor):
 
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
-        listener = self._vacbot.lifespanEvents.subscribe(lambda _: self.schedule_update_ha_state())
-        self.async_on_remove(self._vacbot.lifespanEvents.unsubscribe(listener))
+        listener: EventListener = self._vacbot.lifespanEvents.subscribe(lambda _: self.schedule_update_ha_state())
+        self.async_on_remove(listener.unsubscribe())
 
 
 class DeebotStatsSensor(DeebotBaseSensor):
@@ -204,5 +204,5 @@ class DeebotStatsSensor(DeebotBaseSensor):
 
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
-        listener = self._vacbot.statsEvents.subscribe(lambda _: self.schedule_update_ha_state())
-        self.async_on_remove(self._vacbot.statsEvents.unsubscribe(listener))
+        listener: EventListener = self._vacbot.statsEvents.subscribe(lambda _: self.schedule_update_ha_state())
+        self.async_on_remove(listener.unsubscribe())

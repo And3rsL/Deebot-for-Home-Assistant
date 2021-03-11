@@ -6,7 +6,7 @@ from deebotozmo import (
     FAN_SPEED_QUIET,
     FAN_SPEED_NORMAL,
     FAN_SPEED_MAX,
-    FAN_SPEED_MAXPLUS, VacBot,
+    FAN_SPEED_MAXPLUS, VacBot, EventListener,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.util import slugify
@@ -17,14 +17,14 @@ from .helpers import get_device_info
 _LOGGER = logging.getLogger(__name__)
 
 SUPPORT_DEEBOT = (
-    SUPPORT_BATTERY
-    | SUPPORT_FAN_SPEED
-    | SUPPORT_LOCATE
-    | SUPPORT_PAUSE
-    | SUPPORT_RETURN_HOME
-    | SUPPORT_SEND_COMMAND
-    | SUPPORT_START
-    | SUPPORT_STATE
+        SUPPORT_BATTERY
+        | SUPPORT_FAN_SPEED
+        | SUPPORT_LOCATE
+        | SUPPORT_PAUSE
+        | SUPPORT_RETURN_HOME
+        | SUPPORT_SEND_COMMAND
+        | SUPPORT_START
+        | SUPPORT_STATE
 )
 
 
@@ -38,6 +38,11 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 
     if new_devices:
         async_add_devices(new_devices)
+
+
+def _unsubscribe_listeners(listeners: [EventListener]):
+    for listener in listeners:
+        listener.unsubscribe()
 
 
 class DeebotVacuum(VacuumEntity):
@@ -63,10 +68,13 @@ class DeebotVacuum(VacuumEntity):
 
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
-        self.device.statusEvents.subscribe(lambda _: self.schedule_update_ha_state())
-        self.device.batteryEvents.subscribe(lambda _: self.schedule_update_ha_state())
-        self.device.roomEvents.subscribe(lambda _: self.schedule_update_ha_state())
-        self.device.fanspeedEvents.subscribe(self.on_fan_change)
+        listeners = [
+            self.device.statusEvents.subscribe(lambda _: self.schedule_update_ha_state()),
+            self.device.batteryEvents.subscribe(lambda _: self.schedule_update_ha_state()),
+            self.device.roomEvents.subscribe(lambda _: self.schedule_update_ha_state()),
+            self.device.fanspeedEvents.subscribe(self.on_fan_change)
+        ]
+        self.async_on_remove(lambda: _unsubscribe_listeners(listeners))
 
     def on_fan_change(self, fan_speed):
         self._fan_speed = fan_speed
