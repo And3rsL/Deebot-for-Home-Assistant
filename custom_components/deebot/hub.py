@@ -1,13 +1,12 @@
-import asyncio
-import random
 import logging
-import threading
-import async_timeout
+import random
 import string
-from datetime import timedelta
-from homeassistant.util import Throttle
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+import threading
+
 from deebotozmo import EcoVacsAPI, VacBot
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from homeassistant.core import HomeAssistant
+
 from .const import *
 
 _LOGGER = logging.getLogger(__name__)
@@ -21,7 +20,7 @@ DEEBOT_API_DEVICEID = "".join(
 class DeebotHub:
     """Deebot Hub"""
 
-    def __init__(self, hass, domain_config):
+    def __init__(self, hass: HomeAssistant, domain_config):
         """Initialize the Deebot Vacuum."""
 
         self.config = domain_config
@@ -46,6 +45,11 @@ class DeebotHub:
         continent = domain_config.get(CONF_CONTINENT).lower()
         self.vacbots = []
 
+        async def async_init_vacuums(vacuums: [VacBot]):
+            for vacuum in vacuums:
+                await hass.async_add_executor_job(vacuum.setScheduleUpdates)
+            _LOGGER.debug("Vacuums scheduler initialized")
+
         # CREATE VACBOT FOR EACH DEVICE
         for device in devices:
             if device["name"] in domain_config.get(CONF_DEVICEID)[CONF_DEVICEID]:
@@ -61,11 +65,10 @@ class DeebotHub:
                 )
 
                 _LOGGER.debug("New vacbot found: " + device["name"])
-                vacbot.setScheduleUpdates()
-
                 self.vacbots.append(vacbot)
 
-        _LOGGER.debug("Hub initialized")
+        _LOGGER.debug("Hub initialized - Vacuums scheduler initialization pending")
+        hass.async_create_task(async_init_vacuums(self.vacbots))
 
     def disconnect(self):
         for device in self.vacbots:

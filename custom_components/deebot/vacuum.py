@@ -64,8 +64,6 @@ class DeebotVacuum(VacuumEntity):
 
         self.att_data = {}
 
-        _LOGGER.debug("Vacuum initialized: %s", self.name)
-
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
         listeners = [
@@ -215,7 +213,8 @@ class DeebotVacuum(VacuumEntity):
                     # Convert from int to list
                     self.att_data[room_name] = [room_values, r["id"]]
 
-        self.att_data["status"] = STATE_CODE_TO_STATE[self.device.vacuum_status]
+        if self.device.vacuum_status:
+            self.att_data["status"] = STATE_CODE_TO_STATE[self.device.vacuum_status]
 
         return self.att_data
 
