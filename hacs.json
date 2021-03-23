@@ -1,5 +1,4 @@
 {
   "name": "Deebot for Home Assistant",
-  "homeassistant": "0.110.0",
   "iot_class": "Cloud Polling"
 }
