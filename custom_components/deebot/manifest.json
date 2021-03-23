@@ -6,6 +6,5 @@
     "deebotozmo==1.7.8"
   ],
   "dependencies": [],
-  "codeowners": ["@And3rsL"],
-  "homeassistant": "0.110.0"
+  "codeowners": ["@And3rsL"]
 }
