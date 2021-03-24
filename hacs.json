@@ -1,4 +1,5 @@
 {
-  "name": "Deebot for Home Assistant",
+  "name": "Deebot for Hassio",
+  "homeassistant": "0.110.0",
   "iot_class": "Cloud Polling"
 }
