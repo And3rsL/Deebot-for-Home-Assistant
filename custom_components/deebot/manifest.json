@@ -5,7 +5,7 @@
   "config_flow": true,
   "documentation": "https://github.com/And3rsL/Deebot-for-Hassio",
   "requirements": [
-    "deebotozmo-beta==0.0.3"
+    "deebotozmo==1.8.0"
   ],
   "dependencies": [],
   "codeowners": ["@And3rsL"]
