@@ -1,9 +1,11 @@
 {
   "domain": "deebot",
   "name": "Deebot for Home Assistant",
-  "documentation": "https://github.com/And3rsL/Deebot-for-Home-Assistant",
+  "version": "v0.0.0",
+  "config_flow": true,
+  "documentation": "https://github.com/And3rsL/Deebot-for-Hassio",
   "requirements": [
-    "deebotozmo==1.7.8"
+    "deebotozmo-beta==0.0.3"
   ],
   "dependencies": [],
   "codeowners": ["@And3rsL"]

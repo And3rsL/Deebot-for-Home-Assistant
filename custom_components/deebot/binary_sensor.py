@@ -1,20 +1,25 @@
 """Support for Deebot Sensor."""
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from deebotozmo import *
 from homeassistant.components.binary_sensor import BinarySensorEntity
 
-from . import HUB as hub
+from .const import DOMAIN
+from .helpers import get_device_info
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def setup_platform(hass, config, add_devices, discovery_info=None):
-    """Set up the Deebot binary sensor platform."""
-    hub.update()
+async def async_setup_entry(hass, config_entry, async_add_devices):
+    """Add binary_sensor for passed config_entry in HA."""
+    hub = hass.data[DOMAIN][config_entry.entry_id]
 
+    new_devices = []
     for vacbot in hub.vacbots:
-        add_devices([DeebotMopAttachedBinarySensor(vacbot, "mop_attached")], True)
+        new_devices.append(DeebotMopAttachedBinarySensor(vacbot, "mop_attached"))
+
+    if new_devices:
+        async_add_devices(new_devices)
 
 
 class DeebotMopAttachedBinarySensor(BinarySensorEntity):
@@ -34,9 +39,18 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):
         self._name = self._vacbot_name + "_" + device_id
 
     @property
+    def unique_id(self) -> str:
+        """Return an unique ID."""
+        return self._vacbot.vacuum.get("did", None) + "_" + self._id
+
+    @property
     def name(self):
         """Return the name of the device."""
         return self._name
+
+    @property
+    def should_poll(self) -> bool:
+        return False
 
     @property
     def is_on(self):
@@ -46,3 +60,17 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):
     def icon(self) -> Optional[str]:
         """Return the icon to use in the frontend, if any."""
         return "mdi:water" if self.is_on else "mdi:water-off"
+
+    @property
+    def entity_registry_enabled_default(self) -> bool:
+        """Return if the entity should be enabled when first added to the entity registry."""
+        return False
+
+    @property
+    def device_info(self) -> Optional[Dict[str, Any]]:
+        return get_device_info(self._vacbot)
+
+    async def async_added_to_hass(self) -> None:
+        """Set up the event listeners now that hass is ready."""
+        listener: EventListener = self._vacbot.waterEvents.subscribe(lambda _: self.schedule_update_ha_state())
+        self.async_on_remove(listener.unsubscribe())

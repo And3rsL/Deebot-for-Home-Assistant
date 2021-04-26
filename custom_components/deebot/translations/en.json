@@ -1,0 +1,27 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Alredy configured"
+        },
+        "error": {
+            "cannot_connect": "Can't connect to the ecovacs API",
+            "invalid_auth": "Invalid username or password",
+            "unknown": "Unknown error",
+            "invalid_country":"Country code should be two letter code, ex: us, uk, etc ",
+            "invalid_continent":"Continent code should be two letter code, ex: ww, eu, etc ",
+            "select_robots": "Please select at least 1 robot"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "password": "Password",
+                    "username": "E-mail or ShortID",
+                    "country": "Country",
+                    "continent": "Continent",
+                    "live_map": "Live Map enabled",
+                    "show_color_rooms": "Show room color [BETA]"
+                }
+            }
+        }
+   }
+}

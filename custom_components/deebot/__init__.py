@@ -1,119 +1,62 @@
 """Support for Deebot Vaccums."""
-import asyncio
 import logging
-import async_timeout
-import time
-import random
-import string
-import base64
-import voluptuous as vol
-import homeassistant.helpers.config_validation as cv
-from datetime import timedelta
-from deebotozmo import *
-from homeassistant.util import Throttle
-from homeassistant.helpers import discovery
-from homeassistant.helpers.entity import Entity
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
-
-REQUIREMENTS = ['deebotozmo==1.7.8']
-
-CONF_COUNTRY = "country"
-CONF_CONTINENT = "continent"
-CONF_DEVICEID = "deviceid"
-CONF_LIVEMAPPATH = "livemappath"
-CONF_LIVEMAP = "live_map"
-CONF_SHOWCOLORROOMS = "show_color_rooms"
-DEEBOT_DEVICES = "deebot_devices"
-
-# Generate a random device ID on each bootup
-DEEBOT_API_DEVICEID = "".join(
-    random.choice(string.ascii_uppercase + string.digits) for _ in range(8)
-)
+import asyncio
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from . import hub
+from .const import DOMAIN, STARTUP
 
 _LOGGER = logging.getLogger(__name__)
 
-HUB = None
-DOMAIN = 'deebot'
+PLATFORMS = ["sensor", "binary_sensor", "vacuum", "camera"]
 
-CONFIG_SCHEMA = vol.Schema({
-    DOMAIN: vol.Schema({
-        vol.Required(CONF_USERNAME): cv.string,
-        vol.Required(CONF_PASSWORD): cv.string,
-        vol.Required(CONF_COUNTRY): vol.All(vol.Lower, cv.string),
-        vol.Required(CONF_CONTINENT): vol.All(vol.Lower, cv.string),
-        vol.Required(CONF_DEVICEID): vol.All(cv.ensure_list, [cv.string]),
-        vol.Optional(CONF_LIVEMAP, default=True): cv.boolean,
-        vol.Optional(CONF_SHOWCOLORROOMS, default=False): cv.boolean,
-        vol.Optional(CONF_LIVEMAPPATH, default='www/'): cv.string
-    }),
-}, extra=vol.ALLOW_EXTRA)
 
-def setup(hass, config):
-    """Set up the Deebot."""
-    global HUB
+async def async_setup(hass: HomeAssistant, config: dict):
+    """Set up the Deebot component."""
+    # Ensure our name space for storing objects is a known type. A dict is
+    # common/preferred as it allows a separate instance of your class for each
+    # instance that has been created in the UI.
+    hass.data.setdefault(DOMAIN, {})
 
-    HUB = DeebotHub(config[DOMAIN])
-
-    for component in ('sensor', 'binary_sensor', 'vacuum'):
-        discovery.load_platform(hass, component, DOMAIN, {}, config)
+    # Print startup message
+    _LOGGER.info(STARTUP)
 
     return True
 
-class DeebotHub(Entity):
-    """Deebot Hub"""
 
-    def __init__(self, domain_config):
-        """Initialize the Deebot Vacuum."""
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    # Store an instance of the "connecting" class that does the work of speaking
+    # with your actual devices.
+    hass.data[DOMAIN][entry.entry_id] = await hass.async_add_executor_job(
+        hub.DeebotHub, hass, entry.data
+    )
 
-        self.config = domain_config
-        self._lock = threading.Lock()
-        
-        self.ecovacs_api = EcoVacsAPI(
-            DEEBOT_API_DEVICEID,
-            domain_config.get(CONF_USERNAME),
-            EcoVacsAPI.md5(domain_config.get(CONF_PASSWORD)),
-            domain_config.get(CONF_COUNTRY),
-            domain_config.get(CONF_CONTINENT)
-            )
+    # This creates each HA object for each platform your device requires.
+    # It's done by calling the `async_setup_entry` function in each platform module.
+    for component in PLATFORMS:
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, component)
+        )
 
-        devices = self.ecovacs_api.devices()
-        liveMapEnabled = domain_config.get(CONF_LIVEMAP)
-        liveMapRooms = domain_config.get(CONF_SHOWCOLORROOMS)
-        country = domain_config.get(CONF_COUNTRY).lower()
-        continent = domain_config.get(CONF_CONTINENT).lower()
-        self.vacbots = []
+    return True
 
-        # CREATE VACBOT FOR EACH DEVICE
-        for device in devices:
-            if device['name'] in domain_config.get(CONF_DEVICEID):
-                vacbot = VacBot(
-                    self.ecovacs_api.uid,
-                    self.ecovacs_api.resource,
-                    self.ecovacs_api.user_access_token,
-                    device,
-                    country,
-                    continent,
-                    liveMapEnabled,
-                    liveMapRooms
-                )
-                
-                _LOGGER.debug("New vacbot found: " + device['name'])
 
-                self.vacbots.append(vacbot)
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+    """Unload a config entry."""
+    # This is called when an entry/configured device is to be removed. The class
+    # needs to unload itself, and remove callbacks. See the classes for further
+    # details
+    unload_ok = all(
+        await asyncio.gather(
+            *[
+                hass.config_entries.async_forward_entry_unload(entry, component)
+                for component in PLATFORMS
+            ]
+        )
+    )
 
-        _LOGGER.debug("Hub initialized")
+    if unload_ok:
+        hass.data[DOMAIN][entry.entry_id].disconnect()
+        hass.data[DOMAIN].pop(entry.entry_id)
 
-    @Throttle(timedelta(seconds=10))
-    def update(self):
-        """ Update all statuses. """
-        try:
-            for vacbot in self.vacbots:
-                vacbot.request_all_statuses()
-        except Exception as ex:
-            _LOGGER.error('Update failed: %s', ex)
-            raise
-
-    @property
-    def name(self):
-        """ Return the name of the hub."""
-        return "Deebot Hub"
+    return unload_ok
