@@ -45,11 +45,6 @@ class DeebotHub:
         continent = domain_config.get(CONF_CONTINENT).lower()
         self.vacbots = []
 
-        async def async_init_vacuums(vacuums: [VacBot]):
-            for vacuum in vacuums:
-                await hass.async_add_executor_job(vacuum.setScheduleUpdates)
-            _LOGGER.debug("Vacuums scheduler initialized")
-
         # CREATE VACBOT FOR EACH DEVICE
         for device in devices:
             if device["name"] in domain_config.get(CONF_DEVICEID)[CONF_DEVICEID]:
@@ -65,11 +60,12 @@ class DeebotHub:
                 )
 
                 _LOGGER.debug("New vacbot found: " + device["name"])
+                vacbot.setScheduleUpdates()
+                
                 self.vacbots.append(vacbot)
-
-        _LOGGER.debug("Hub initialized - Vacuums scheduler initialization pending")
-        hass.async_create_task(async_init_vacuums(self.vacbots))
-
+                
+        _LOGGER.debug("Hub initialized")
+        
     def disconnect(self):
         for device in self.vacbots:
             device.disconnect()
