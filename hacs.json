@@ -1,4 +1,8 @@
 {
   "name": "Deebot for Home Assistant",
-  "iot_class": "Cloud Polling"
+  "iot_class": "Cloud Polling",
+  "zip_release": true,
+  "filename": "deebot.zip",
+  "hide_default_branch": true,
+  "domain": "deebot"
 }
