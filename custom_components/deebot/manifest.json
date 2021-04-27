@@ -4,6 +4,7 @@
   "version": "v0.0.0",
   "config_flow": true,
   "documentation": "https://github.com/And3rsL/Deebot-for-Hassio",
+  "issue_tracker": "https://github.com/And3rsL/Deebot-for-Hassio/issues",
   "requirements": [
     "deebotozmo==1.8.0"
   ],
