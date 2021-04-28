@@ -114,7 +114,7 @@ actions:
     icon: 'mdi:bed-empty'
   - service: script.CLEAN_ALL
     icon: 'mdi:robot-vacuum-variant'
-map: camera.YOURLIVEMAP_CAMERA
+map: camera.ROBOTNAME_liveMap
 
 ```
 
