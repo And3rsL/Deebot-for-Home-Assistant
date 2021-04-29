@@ -1,14 +1,15 @@
 """Config flow for Deebot integration."""
 import logging
-import voluptuous as vol
 import random
 import string
+
+import voluptuous as vol
+from deebotozmo import EcoVacsAPI
+
 import homeassistant.helpers.config_validation as cv
-from homeassistant import config_entries, core, exceptions
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
-from .const import DOMAIN
+from homeassistant import config_entries, exceptions
+from homeassistant.const import CONF_MODE, CONF_DEVICES
 from .const import *
-from deebotozmo import EcoVacsAPI, VacBot
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -17,39 +18,32 @@ DEEBOT_API_DEVICEID = "".join(
     random.choice(string.ascii_uppercase + string.digits) for _ in range(8)
 )
 
-DATA_SCHEMA = vol.Schema(
+USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
         vol.Required(CONF_COUNTRY): str,
         vol.Required(CONF_CONTINENT): str,
+    }
+)
+
+ROBOTS_DATA_SCHEMA = vol.Schema(
+    {
         vol.Optional(CONF_LIVEMAP, default=False): bool,
         vol.Optional(CONF_SHOWCOLORROOMS, default=False): bool,
     }
 )
 
 
-async def validate_input(hass: core.HomeAssistant, data: dict):
-    """Validate the user input allows us to connect.
-    Data has the keys from DATA_SCHEMA with values provided by the user.
-    """
+def ConfigEntryRetriveRobots(domain_config: dict):
 
-    if len(data[CONF_COUNTRY]) != 2:
-        raise InvalidCountry
-
-    if len(data[CONF_CONTINENT]) != 2:
-        raise InvalidContinent
-
-    return await hass.async_add_executor_job(ConfigEntryRetriveRobots, hass, data)
-
-
-def ConfigEntryRetriveRobots(hass: core.HomeAssistant, domain_config):
     ecovacs_api = EcoVacsAPI(
         DEEBOT_API_DEVICEID,
         domain_config.get(CONF_USERNAME),
         EcoVacsAPI.md5(domain_config.get(CONF_PASSWORD)),
         domain_config.get(CONF_COUNTRY),
         domain_config.get(CONF_CONTINENT),
+        verify_ssl=domain_config.get(CONF_VERIFY_SSL, True)
     )
 
     return ecovacs_api.devices()
@@ -58,46 +52,61 @@ def ConfigEntryRetriveRobots(hass: core.HomeAssistant, domain_config):
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Deebot."""
 
-    VERSION = 1
+    VERSION = 2
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
+
+    def __init__(self) -> None:
+        self.data = {}
+        self.robot_list = []
 
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
-        self.data = {}
         errors = {}
         if user_input is not None:
+            if len(user_input[CONF_COUNTRY]) != 2:
+                errors[CONF_COUNTRY] = "invalid_country"
+
+            if len(user_input[CONF_CONTINENT]) != 2:
+                errors[CONF_CONTINENT] = "invalid_continent"
+
             try:
-                info = await validate_input(self.hass, user_input)
+                info = await self.hass.async_add_executor_job(ConfigEntryRetriveRobots, user_input)
                 self.robot_list = info
             except CannotConnect:
                 errors["base"] = "cannot_connect"
-            except InvalidCountry:
-                errors[CONF_COUNTRY] = "invalid_country"
-            except InvalidContinent:
-                errors[CONF_CONTINENT] = "invalid_continent"
             except Exception:
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
 
             if not errors:
-                self.data = user_input
+                self.data.update(user_input)
+                return await self.async_step_robots()
 
-                robot_listDict = {e["name"]: e["nick"] for e in self.robot_list}
-                options_schema = vol.Schema(
-                    {
-                        vol.Required(
-                            CONF_DEVICEID, default=list(robot_listDict.keys())
-                        ): cv.multi_select(robot_listDict)
-                    }
-                )
+        if self.show_advanced_options:
+            return await self.async_step_user_advanced()
 
-                return self.async_show_form(
-                    step_id="robots", data_schema=options_schema, errors=errors
-                )
-
-        # If there is no user input or there were errors, show the form again, including any errors that were found with the input.
         return self.async_show_form(
-            step_id="user", data_schema=DATA_SCHEMA, errors=errors
+            step_id="user", data_schema=USER_DATA_SCHEMA, errors=errors
+        )
+
+    async def async_step_user_advanced(self, user_input=None):
+        """Handle an advanced mode flow initialized by the user."""
+        if user_input is not None:
+            if user_input.get(CONF_MODE, CONF_MODE_CLOUD) == CONF_MODE_BUMPER:
+                return await self.async_step_user(user_input=BUMPER_CONFIGURATION)
+
+            return await self.async_step_user()
+
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_MODE, default=CONF_MODE_CLOUD): vol.In(
+                    [CONF_MODE_CLOUD, CONF_MODE_BUMPER]
+                )
+            }
+        )
+
+        return self.async_show_form(
+            step_id="user_advanced", data_schema=data_schema
         )
 
     async def async_step_robots(self, user_input=None):
@@ -106,10 +115,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
         if user_input is not None:
             try:
-                if len(user_input[CONF_DEVICEID]) < 1:
+                if len(user_input[CONF_DEVICES]) < 1:
                     errors["base"] = "select_robots"
                 else:
-                    self.data[CONF_DEVICEID] = user_input
+                    self.data.update(user_input)
                     return self.async_create_entry(
                         title=self.data[CONF_USERNAME], data=self.data
                     )
@@ -119,10 +128,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         # If there is no user input or there were errors, show the form again, including any errors that were found with the input.
         robot_listDict = {e["name"]: e["nick"] for e in self.robot_list}
-        options_schema = vol.Schema(
+        options_schema = ROBOTS_DATA_SCHEMA.extend(
             {
                 vol.Required(
-                    CONF_DEVICEID, default=list(robot_listDict.keys())
+                    CONF_DEVICES, default=list(robot_listDict.keys())
                 ): cv.multi_select(robot_listDict)
             }
         )
@@ -134,11 +143,3 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 class CannotConnect(exceptions.HomeAssistantError):
     """Error to indicate we cannot connect."""
-
-
-class InvalidCountry(exceptions.HomeAssistantError):
-    """Error to indicate there is an invalid hostname."""
-
-
-class InvalidContinent(exceptions.HomeAssistantError):
-    """Error to indicate there is an invalid hostname."""
