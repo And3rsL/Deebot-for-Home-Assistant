@@ -58,6 +58,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         self.data = {}
         self.robot_list = []
+        self.mode = None
 
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
@@ -82,7 +83,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self.data.update(user_input)
                 return await self.async_step_robots()
 
-        if self.show_advanced_options:
+        if self.show_advanced_options and self.mode is None:
             return await self.async_step_user_advanced()
 
         return self.async_show_form(
@@ -92,7 +93,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user_advanced(self, user_input=None):
         """Handle an advanced mode flow initialized by the user."""
         if user_input is not None:
-            if user_input.get(CONF_MODE, CONF_MODE_CLOUD) == CONF_MODE_BUMPER:
+            self.mode = user_input.get(CONF_MODE, CONF_MODE_CLOUD)
+            if self.mode == CONF_MODE_BUMPER:
                 return await self.async_step_user(user_input=BUMPER_CONFIGURATION)
 
             return await self.async_step_user()
