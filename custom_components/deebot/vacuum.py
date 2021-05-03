@@ -8,6 +8,9 @@ from deebotozmo import (
     FAN_SPEED_MAX,
     FAN_SPEED_MAXPLUS, VacBot, EventListener,
 )
+
+from homeassistant.components.vacuum import SUPPORT_BATTERY, SUPPORT_FAN_SPEED, SUPPORT_LOCATE, SUPPORT_PAUSE, \
+    SUPPORT_RETURN_HOME, SUPPORT_SEND_COMMAND, SUPPORT_START, SUPPORT_STATE, VacuumEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.util import slugify
 

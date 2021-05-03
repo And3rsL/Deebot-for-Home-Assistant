@@ -17,9 +17,12 @@
                     "password": "Password",
                     "username": "E-mail o ShortID",
                     "country": "Country",
-                    "continent": "Continent",
+                    "continent": "Continent"
+                },
+                "robots": {
                     "live_map": "Abilita Live Map",
-                    "show_color_rooms": "Mostra stanze colorate [BETA]"
+                    "show_color_rooms": "Mostra stanze colorate [BETA]",
+                    "devices": "Dispositivi"
                 }
             }
         }

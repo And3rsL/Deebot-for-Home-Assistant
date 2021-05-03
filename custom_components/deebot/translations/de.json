@@ -17,9 +17,14 @@
                     "password": "Passwort",
                     "username": "E-mail oder ShortID",
                     "country": "Land",
-                    "continent": "Kontinent",
+                    "continent": "Kontinent"
+                }
+            },
+            "robots": {
+                "data": {
                     "live_map": "Live-Karte aktiviert",
-                    "show_color_rooms": "Raumfarbe anzeigen [BETA]"
+                    "show_color_rooms": "Raumfarbe anzeigen [BETA]",
+                    "devices": "Geräte"
                 }
             }
         }

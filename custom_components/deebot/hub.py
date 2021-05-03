@@ -4,9 +4,9 @@ import string
 import threading
 
 from deebotozmo import EcoVacsAPI, VacBot
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
-from homeassistant.core import HomeAssistant
 
+from homeassistant.const import CONF_DEVICES
+from homeassistant.core import HomeAssistant
 from .const import *
 
 _LOGGER = logging.getLogger(__name__)
@@ -27,12 +27,14 @@ class DeebotHub:
         self._lock = threading.Lock()
         self.hass = hass
 
+        verify_ssl = domain_config.get(CONF_VERIFY_SSL, True)
         self.ecovacs_api = EcoVacsAPI(
             DEEBOT_API_DEVICEID,
             domain_config.get(CONF_USERNAME),
             EcoVacsAPI.md5(domain_config.get(CONF_PASSWORD)),
             domain_config.get(CONF_COUNTRY),
             domain_config.get(CONF_CONTINENT),
+            verify_ssl=verify_ssl
         )
 
         devices = self.ecovacs_api.devices()
@@ -47,7 +49,7 @@ class DeebotHub:
 
         # CREATE VACBOT FOR EACH DEVICE
         for device in devices:
-            if device["name"] in domain_config.get(CONF_DEVICEID)[CONF_DEVICEID]:
+            if device["name"] in domain_config.get(CONF_DEVICES):
                 vacbot = VacBot(
                     self.ecovacs_api.uid,
                     self.ecovacs_api.resource,
@@ -57,15 +59,16 @@ class DeebotHub:
                     continent,
                     liveMapEnabled,
                     liveMapRooms,
+                    verify_ssl=verify_ssl
                 )
 
                 _LOGGER.debug("New vacbot found: " + device["name"])
                 vacbot.setScheduleUpdates()
-                
+
                 self.vacbots.append(vacbot)
-                
+
         _LOGGER.debug("Hub initialized")
-        
+
     def disconnect(self):
         for device in self.vacbots:
             device.disconnect()
