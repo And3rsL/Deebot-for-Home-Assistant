@@ -1,7 +1,9 @@
 """Support for Deebot Vaccums."""
-import logging
 import asyncio
+import logging
+
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_DEVICES, CONF_VERIFY_SSL
 from homeassistant.core import HomeAssistant
 from . import hub
 from .const import DOMAIN, STARTUP
@@ -60,3 +62,25 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
+
+
+async def async_migrate_entry(hass, config_entry: ConfigEntry):
+    """Migrate old entry."""
+    _LOGGER.debug("Migrating from version %s", config_entry.version)
+
+    if config_entry.version == 1:
+        new = {**config_entry.data,
+               CONF_VERIFY_SSL: True}
+
+        device_id = "deviceid"
+        devices = new.pop(device_id, {})
+
+        new[CONF_DEVICES] = devices.get(device_id, [])
+
+        config_entry.data = {**new}
+
+        config_entry.version = 2
+
+    _LOGGER.info("Migration to version %s successful", config_entry.version)
+
+    return True

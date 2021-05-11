@@ -1,21 +1,12 @@
 from homeassistant.components.vacuum import (
-    PLATFORM_SCHEMA,
     STATE_CLEANING,
     STATE_DOCKED,
     STATE_ERROR,
     STATE_IDLE,
     STATE_PAUSED,
     STATE_RETURNING,
-    SUPPORT_BATTERY,
-    SUPPORT_FAN_SPEED,
-    SUPPORT_LOCATE,
-    SUPPORT_PAUSE,
-    SUPPORT_RETURN_HOME,
-    SUPPORT_SEND_COMMAND,
-    SUPPORT_START,
-    SUPPORT_STATE,
-    VacuumEntity,
 )
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, CONF_VERIFY_SSL
 
 DOMAIN = "deebot"
 INTEGRATION_VERSION = "main"
@@ -33,7 +24,6 @@ If you have any issues with this you need to open an issue here:
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
-CONF_DEVICEID = "deviceid"
 CONF_LIVEMAP = "live_map"
 CONF_SHOWCOLORROOMS = "show_color_rooms"
 DEEBOT_DEVICES = f"{DOMAIN}_devices"
@@ -44,4 +34,17 @@ STATE_CODE_TO_STATE = {
     "STATE_DOCKED": STATE_DOCKED,
     "STATE_ERROR": STATE_ERROR,
     "STATE_PAUSED": STATE_PAUSED,
+}
+
+CONF_BUMPER = "Bumper"
+CONF_MODE_BUMPER = CONF_BUMPER
+CONF_MODE_CLOUD = "Cloud (recommended)"
+
+# Bumper has no auth and serves the urls for all countries/continents
+BUMPER_CONFIGURATION = {
+    CONF_CONTINENT: "eu",
+    CONF_COUNTRY: "it",
+    CONF_PASSWORD: CONF_BUMPER,
+    CONF_USERNAME: CONF_BUMPER,
+    CONF_VERIFY_SSL: False  # required as bumper is using self signed certificates
 }
