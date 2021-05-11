@@ -63,8 +63,8 @@ class DeebotHub:
                 )
 
                 _LOGGER.debug("New vacbot found: " + device["name"])
-                vacbot.setScheduleUpdates()
-
+                
+                self.hass.async_add_executor_job(vacbot.setScheduleUpdates)
                 self.vacbots.append(vacbot)
 
         _LOGGER.debug("Hub initialized")

@@ -70,7 +70,7 @@ class DeebotBaseSensor(Entity):
     @property
     def entity_registry_enabled_default(self) -> bool:
         """Return if the entity should be enabled when first added to the entity registry."""
-        return True
+        return False
 
     @property
     def should_poll(self) -> bool:

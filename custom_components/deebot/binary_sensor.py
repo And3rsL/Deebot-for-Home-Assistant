@@ -64,7 +64,7 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):
     @property
     def entity_registry_enabled_default(self) -> bool:
         """Return if the entity should be enabled when first added to the entity registry."""
-        return True
+        return False
 
     @property
     def device_info(self) -> Optional[Dict[str, Any]]:
