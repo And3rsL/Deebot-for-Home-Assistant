@@ -26,6 +26,9 @@
                     "show_color_rooms": "Show room color [BETA]",
                     "devices": "Devices"
                 }
+            },
+            "user_advanced": {
+                "description": "Please select \"Bumper\" ONLY if you have a working bumper instance already. Otherwise, select \"Cloud\" please."
             }
         }
    }

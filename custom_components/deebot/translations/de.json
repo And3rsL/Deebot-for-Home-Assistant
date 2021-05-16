@@ -26,6 +26,9 @@
                     "show_color_rooms": "Raumfarbe anzeigen [BETA]",
                     "devices": "Geräte"
                 }
+            },
+            "user_advanced": {
+                "description": "Wählen Sie \"Bumper\" nur, falls Sie eine funktionierende Bumper-Instanz haben. Sonst wählen Sie bitte die empfohlene Variante \"Cloud\"."
             }
         }
    }
