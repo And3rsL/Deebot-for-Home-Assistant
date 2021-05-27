@@ -3,8 +3,8 @@
   "name": "Deebot for Home Assistant",
   "version": "v0.0.0",
   "config_flow": true,
-  "documentation": "https://github.com/And3rsL/Deebot-for-Hassio",
-  "issue_tracker": "https://github.com/And3rsL/Deebot-for-Hassio/issues",
+  "documentation": "https://github.com/And3rsL/Deebot-for-Home-Assistant",
+  "issue_tracker": "https://github.com/And3rsL/Deebot-for-Home-Assistant/issues",
   "requirements": [
     "deebotozmo==1.8.0"
   ],
