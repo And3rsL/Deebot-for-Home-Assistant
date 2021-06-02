@@ -1,15 +1,16 @@
-from deebotozmo import VacBot
+from deebotozmo.models import Vacuum
+from deebotozmo.vacuum_bot import VacuumBot
 
 from .const import DOMAIN
 
 
-def get_device_info(vacBot: VacBot):
-    device: dict = vacBot.vacuum
+def get_device_info(vacuum_bot: VacuumBot):
+    device: Vacuum = vacuum_bot.vacuum
     identifiers = set()
-    if "did" in device:
-        identifiers.add((DOMAIN, device.get("did")))
-    if "name" in device:
-        identifiers.add((DOMAIN, device.get("name")))
+    if device.did:
+        identifiers.add((DOMAIN, device.did))
+    if device.name:
+        identifiers.add((DOMAIN, device.name))
 
     if not identifiers:
         # we don't get a identifier to identify the device correctly abort
@@ -20,5 +21,5 @@ def get_device_info(vacBot: VacBot):
         "name": device.get("nick", "Deebot vacuum"),
         "manufacturer": "Ecovacs",
         "model": device.get("deviceName", "Deebot vacuum"),
-        "sw_version": vacBot.fwversion,
+        "sw_version": vacuum_bot.fw_version,
     }

@@ -24,8 +24,6 @@ If you have any issues with this you need to open an issue here:
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
-CONF_LIVEMAP = "live_map"
-CONF_SHOWCOLORROOMS = "show_color_rooms"
 DEEBOT_DEVICES = f"{DOMAIN}_devices"
 STATE_CODE_TO_STATE = {
     "STATE_IDLE": STATE_IDLE,

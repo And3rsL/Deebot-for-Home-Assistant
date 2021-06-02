@@ -1,12 +1,16 @@
 import logging
 import random
 import string
-import threading
+from typing import Any, Mapping
 
-from deebotozmo import EcoVacsAPI, VacBot
+import aiohttp
+from deebotozmo.ecovacs_api import EcovacsAPI
+from deebotozmo.util import md5
+from deebotozmo.vacuum_bot import VacuumBot
 
 from homeassistant.const import CONF_DEVICES
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import aiohttp_client
 from .const import *
 
 _LOGGER = logging.getLogger(__name__)
@@ -23,55 +27,45 @@ class DeebotHub:
     def __init__(self, hass: HomeAssistant, domain_config):
         """Initialize the Deebot Vacuum."""
 
-        self.config = domain_config
-        self._lock = threading.Lock()
-        self.hass = hass
+        self.config: Mapping[str, Any] = domain_config
+        self.hass: HomeAssistant = hass
+        self.country: str = domain_config.get(CONF_COUNTRY).lower()
+        self.continent: str = domain_config.get(CONF_CONTINENT).lower()
+        self.vacbots: [VacuumBot] = []
+        self.verify_ssl = domain_config.get(CONF_VERIFY_SSL, True)
+        self._session: aiohttp.ClientSession = aiohttp_client.async_get_clientsession(self.hass,
+                                                                                      verify_ssl=self.verify_ssl)
 
-        verify_ssl = domain_config.get(CONF_VERIFY_SSL, True)
-        self.ecovacs_api = EcoVacsAPI(
+        self.ecovacs_api = EcovacsAPI(
+            self._session,
             DEEBOT_API_DEVICEID,
             domain_config.get(CONF_USERNAME),
-            EcoVacsAPI.md5(domain_config.get(CONF_PASSWORD)),
-            domain_config.get(CONF_COUNTRY),
-            domain_config.get(CONF_CONTINENT),
-            verify_ssl=verify_ssl
+            md5(domain_config.get(CONF_PASSWORD)),
+            self.country,
+            self.continent,
+            verify_ssl=self.verify_ssl
         )
 
-        devices = self.ecovacs_api.devices()
-
-        liveMapEnabled = domain_config.get(CONF_LIVEMAP)
-        self.liveMapEnabled = liveMapEnabled
-
-        liveMapRooms = domain_config.get(CONF_SHOWCOLORROOMS)
-        country = domain_config.get(CONF_COUNTRY).lower()
-        continent = domain_config.get(CONF_CONTINENT).lower()
-        self.vacbots = []
+    async def async_initialize(self):
+        await self.ecovacs_api.login()
+        devices = await self.ecovacs_api.get_devices()
 
         # CREATE VACBOT FOR EACH DEVICE
         for device in devices:
-            if device["name"] in domain_config.get(CONF_DEVICES):
-                vacbot = VacBot(
-                    self.ecovacs_api.uid,
-                    self.ecovacs_api.resource,
-                    self.ecovacs_api.user_access_token,
+            if device["name"] in self.config.get(CONF_DEVICES):
+                vacbot = VacuumBot(
+                    self._session,
+                    await self.ecovacs_api.get_request_auth(),
                     device,
-                    country,
-                    continent,
-                    liveMapEnabled,
-                    liveMapRooms,
-                    verify_ssl=verify_ssl
+                    self.country,
+                    self.continent,
+                    verify_ssl=self.verify_ssl
                 )
 
                 _LOGGER.debug("New vacbot found: " + device["name"])
-                
-                self.hass.async_add_executor_job(vacbot.setScheduleUpdates)
                 self.vacbots.append(vacbot)
 
         _LOGGER.debug("Hub initialized")
-
-    def disconnect(self):
-        for device in self.vacbots:
-            device.disconnect()
 
     @property
     def name(self):

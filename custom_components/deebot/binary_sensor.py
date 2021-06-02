@@ -1,7 +1,9 @@
 """Support for Deebot Sensor."""
+import logging
 from typing import Optional, Dict, Any
 
-from deebotozmo import *
+from deebotozmo.events import WaterInfoEvent, EventListener
+from deebotozmo.vacuum_bot import VacuumBot
 from homeassistant.components.binary_sensor import BinarySensorEntity
 
 from .const import DOMAIN
@@ -25,23 +27,24 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 class DeebotMopAttachedBinarySensor(BinarySensorEntity):
     """Deebot mop attached binary sensor"""
 
-    def __init__(self, vacbot: VacBot, device_id: str):
+    def __init__(self, vacuum_bot: VacuumBot, device_id: str):
         """Initialize the Sensor."""
-        self._vacbot = vacbot
-        self._id = device_id
+        self._vacuum_bot: VacuumBot = vacuum_bot
+        self._id: str = device_id
 
-        if self._vacbot.vacuum.get("nick", None) is not None:
-            self._vacbot_name = "{}".format(self._vacbot.vacuum["nick"])
+        if self._vacuum_bot.vacuum.nick is not None:
+            self._name: str = self._vacuum_bot.vacuum.nick
         else:
             # In case there is no nickname defined, use the device id
-            self._vacbot_name = "{}".format(self._vacbot.vacuum["did"])
+            self._name = self._vacuum_bot.vacuum.did
 
-        self._name = self._vacbot_name + "_" + device_id
+        self._name += f"_{device_id}"
+        self._mop_attached = False
 
     @property
     def unique_id(self) -> str:
         """Return an unique ID."""
-        return self._vacbot.vacuum.get("did", None) + "_" + self._id
+        return f"{self._vacuum_bot.vacuum.did}_{self._id}"
 
     @property
     def name(self):
@@ -54,7 +57,7 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):
 
     @property
     def is_on(self):
-        return self._vacbot.mop_attached
+        return self._mop_attached
 
     @property
     def icon(self) -> Optional[str]:
@@ -68,9 +71,15 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):
 
     @property
     def device_info(self) -> Optional[Dict[str, Any]]:
-        return get_device_info(self._vacbot)
+        return get_device_info(self._vacuum_bot)
 
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
-        listener: EventListener = self._vacbot.waterEvents.subscribe(lambda _: self.schedule_update_ha_state())
-        self.async_on_remove(listener.unsubscribe)
+        await super().async_added_to_hass()
+
+        async def on_event(event: WaterInfoEvent):
+            self._mop_attached = event.mopAttached
+            self.async_write_ha_state()
+
+        listener: EventListener = self._vacuum_bot.waterEvents.subscribe(on_event)
+        self.async_on_remove(listener.unsubscribe())

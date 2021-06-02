@@ -29,17 +29,12 @@ async def async_setup(hass: HomeAssistant, config: dict):
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Store an instance of the "connecting" class that does the work of speaking
     # with your actual devices.
-    hass.data[DOMAIN][entry.entry_id] = await hass.async_add_executor_job(
-        hub.DeebotHub, hass, entry.data
-    )
+    deebot_hub = hub.DeebotHub(hass, entry.data)
+    await deebot_hub.async_initialize()
 
-    # This creates each HA object for each platform your device requires.
-    # It's done by calling the `async_setup_entry` function in each platform module.
-    for component in PLATFORMS:
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, component)
-        )
+    hass.data[DOMAIN][entry.entry_id] = deebot_hub
 
+    hass.config_entries.async_setup_platforms(entry, PLATFORMS)
     return True
 
 
@@ -58,13 +53,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     )
 
     if unload_ok:
-        hass.data[DOMAIN][entry.entry_id].disconnect()
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
 
 
-async def async_migrate_entry(hass, config_entry: ConfigEntry):
+async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
     """Migrate old entry."""
     _LOGGER.debug("Migrating from version %s", config_entry.version)
 
@@ -74,6 +68,8 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
         device_id = "deviceid"
         devices = new.pop(device_id, {})
+        new.pop("show_color_rooms")
+        new.pop("live_map")
 
         new[CONF_DEVICES] = devices.get(device_id, [])
 
