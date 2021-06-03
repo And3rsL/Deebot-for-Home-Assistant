@@ -10,16 +10,17 @@ from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN
 from .helpers import get_device_info
+from .hub import DeebotHub
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Add sensors for passed config_entry in HA."""
-    hub = hass.data[DOMAIN][config_entry.entry_id]
+    hub: DeebotHub = hass.data[DOMAIN][config_entry.entry_id]
 
     new_devices = []
-    for vacbot in hub.vacbots:
+    for vacbot in hub.vacuum_bots:
         # General
         new_devices.append(DeebotLastCleanImageSensor(vacbot, "last_clean_image"))
         new_devices.append(DeebotWaterLevelSensor(vacbot, "water_level"))

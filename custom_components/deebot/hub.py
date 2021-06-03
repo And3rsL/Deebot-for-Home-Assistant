@@ -10,6 +10,7 @@ from deebotozmo.vacuum_bot import VacuumBot
 
 from homeassistant.const import CONF_DEVICES
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import aiohttp_client
 from .const import *
 
@@ -24,48 +25,54 @@ DEEBOT_API_DEVICEID = "".join(
 class DeebotHub:
     """Deebot Hub"""
 
-    def __init__(self, hass: HomeAssistant, domain_config):
+    def __init__(self, hass: HomeAssistant, config: Mapping[str, Any]):
         """Initialize the Deebot Vacuum."""
 
-        self.config: Mapping[str, Any] = domain_config
-        self.hass: HomeAssistant = hass
-        self.country: str = domain_config.get(CONF_COUNTRY).lower()
-        self.continent: str = domain_config.get(CONF_CONTINENT).lower()
-        self.vacbots: [VacuumBot] = []
-        self.verify_ssl = domain_config.get(CONF_VERIFY_SSL, True)
-        self._session: aiohttp.ClientSession = aiohttp_client.async_get_clientsession(self.hass,
-                                                                                      verify_ssl=self.verify_ssl)
+        self._config: Mapping[str, Any] = config
+        self._hass: HomeAssistant = hass
+        self._country: str = config.get(CONF_COUNTRY).lower()
+        self._continent: str = config.get(CONF_CONTINENT).lower()
+        self.vacuum_bots: [VacuumBot] = []
+        self._verify_ssl = config.get(CONF_VERIFY_SSL, True)
+        self._session: aiohttp.ClientSession = aiohttp_client.async_get_clientsession(self._hass,
+                                                                                      verify_ssl=self._verify_ssl)
 
-        self.ecovacs_api = EcovacsAPI(
+        self._ecovacs_api = EcovacsAPI(
             self._session,
             DEEBOT_API_DEVICEID,
-            domain_config.get(CONF_USERNAME),
-            md5(domain_config.get(CONF_PASSWORD)),
-            self.country,
-            self.continent,
-            verify_ssl=self.verify_ssl
+            config.get(CONF_USERNAME),
+            md5(config.get(CONF_PASSWORD)),
+            self._country,
+            self._continent,
+            verify_ssl=self._verify_ssl
         )
 
-    async def async_initialize(self):
-        await self.ecovacs_api.login()
-        devices = await self.ecovacs_api.get_devices()
+    async def async_setup(self):
+        try:
+            await self._ecovacs_api.login()
+            devices = await self._ecovacs_api.get_devices()
 
-        # CREATE VACBOT FOR EACH DEVICE
-        for device in devices:
-            if device["name"] in self.config.get(CONF_DEVICES):
-                vacbot = VacuumBot(
-                    self._session,
-                    await self.ecovacs_api.get_request_auth(),
-                    device,
-                    self.country,
-                    self.continent,
-                    verify_ssl=self.verify_ssl
-                )
+            # CREATE VACBOT FOR EACH DEVICE
+            for device in devices:
+                if device["name"] in self._config.get(CONF_DEVICES):
+                    vacbot = VacuumBot(
+                        self._session,
+                        await self._ecovacs_api.get_request_auth(),
+                        device,
+                        self._country,
+                        self._continent,
+                        verify_ssl=self._verify_ssl
+                    )
 
-                _LOGGER.debug("New vacbot found: " + device["name"])
-                self.vacbots.append(vacbot)
+                    _LOGGER.debug("New vacbot found: " + device["name"])
+                    self.vacuum_bots.append(vacbot)
 
-        _LOGGER.debug("Hub initialized")
+            _LOGGER.debug("Hub setup complete")
+        except Exception as err:
+            # Todo better error handling
+            raise ConfigEntryNotReady(
+                f"Error during setup"
+            ) from err
 
     @property
     def name(self):

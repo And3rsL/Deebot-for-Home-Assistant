@@ -8,16 +8,17 @@ from homeassistant.components.binary_sensor import BinarySensorEntity
 
 from .const import DOMAIN
 from .helpers import get_device_info
+from .hub import DeebotHub
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Add binary_sensor for passed config_entry in HA."""
-    hub = hass.data[DOMAIN][config_entry.entry_id]
+    hub: DeebotHub = hass.data[DOMAIN][config_entry.entry_id]
 
     new_devices = []
-    for vacbot in hub.vacbots:
+    for vacbot in hub.vacuum_bots:
         new_devices.append(DeebotMopAttachedBinarySensor(vacbot, "mop_attached"))
 
     if new_devices:

@@ -6,34 +6,26 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_DEVICES, CONF_VERIFY_SSL
 from homeassistant.core import HomeAssistant
 from . import hub
-from .const import DOMAIN, STARTUP
+from .const import DOMAIN, STARTUP_MESSAGE
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = ["sensor", "binary_sensor", "vacuum", "camera"]
 
 
-async def async_setup(hass: HomeAssistant, config: dict):
-    """Set up the Deebot component."""
-    # Ensure our name space for storing objects is a known type. A dict is
-    # common/preferred as it allows a separate instance of your class for each
-    # instance that has been created in the UI.
-    hass.data.setdefault(DOMAIN, {})
-
-    # Print startup message
-    _LOGGER.info(STARTUP)
-
-    return True
-
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up this integration using UI."""
+
+    if DOMAIN not in hass.data:
+        # Print startup message
+        _LOGGER.info(STARTUP_MESSAGE)
+
     # Store an instance of the "connecting" class that does the work of speaking
     # with your actual devices.
     deebot_hub = hub.DeebotHub(hass, entry.data)
-    await deebot_hub.async_initialize()
+    await deebot_hub.async_setup()
 
-    hass.data[DOMAIN][entry.entry_id] = deebot_hub
-
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = deebot_hub
     hass.config_entries.async_setup_platforms(entry, PLATFORMS)
     return True
 
@@ -54,6 +46,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
+        if len(hass.data[DOMAIN]) == 0:
+            hass.data.pop(DOMAIN)
 
     return unload_ok
 

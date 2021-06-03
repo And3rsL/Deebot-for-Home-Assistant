@@ -12,7 +12,7 @@ DOMAIN = "deebot"
 INTEGRATION_VERSION = "main"
 ISSUE_URL = "https://github.com/And3rsL/Deebot-for-Home-Assistant/issues"
 
-STARTUP = f"""
+STARTUP_MESSAGE = f"""
 -------------------------------------------------------------------
 {DOMAIN}
 Version: {INTEGRATION_VERSION}
