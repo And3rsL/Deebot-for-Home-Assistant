@@ -6,11 +6,11 @@ from deebotozmo.commands import *
 from deebotozmo.constants import FAN_SPEED_QUIET, FAN_SPEED_NORMAL, FAN_SPEED_MAX, FAN_SPEED_MAXPLUS
 from deebotozmo.events import EventListener, BatteryEvent, RoomsEvent, FanSpeedEvent, StatusEvent
 from deebotozmo.vacuum_bot import VacuumBot
+
 from homeassistant.components.vacuum import SUPPORT_BATTERY, SUPPORT_FAN_SPEED, SUPPORT_LOCATE, SUPPORT_PAUSE, \
     SUPPORT_RETURN_HOME, SUPPORT_SEND_COMMAND, SUPPORT_START, SUPPORT_STATE, VacuumEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.util import slugify
-
 from .const import *
 from .helpers import get_device_info
 from .hub import DeebotHub
@@ -165,19 +165,20 @@ class DeebotVacuum(VacuumEntity):
 
     async def async_send_command(self, command, params=None, **kwargs):
         """Send a command to a vacuum cleaner."""
-        _LOGGER.debug("async_send_command %s (%s), %s", command, params, kwargs)
+        _LOGGER.debug(f"async_send_command {command} with {params}")
 
         if command == "spot_area":
-            await self._device.execute_command(CleanSpotArea(area=params["rooms"], cleanings=params["cleanings"]))
+            await self._device.execute_command(
+                CleanSpotArea(area=str(params["rooms"]), cleanings=params.get("cleanings", 1)))
         elif command == "custom_area":
             await self._device.execute_command(CleanCustomArea(
-                map_position=params["coordinates"], cleanings=params["cleanings"]))
+                map_position=str(params["coordinates"]), cleanings=params.get("cleanings", 1)))
         elif command == "set_water":
             await self._device.execute_command(SetWaterLevel(params["amount"]))
         elif command == "relocate":
             await self._device.execute_command(Relocate())
         elif command == "auto_clean":
-            await self._device.execute_command(CleanStart(params["type"]))
+            await self._device.execute_command(CleanStart(params.get("type", "auto")))
         # todo really required?
         # if command == "refresh_components":
         #     await self.hass.async_add_executor_job(self.device.refresh_components)

@@ -191,7 +191,7 @@ class DeebotStatsSensor(DeebotBaseSensor):
                 self._value = getattr(event, self._type)
 
                 if self._type == "time":
-                    self._value /= 60
+                    self._value = round(self._value / 60, 0)
 
                 self.async_write_ha_state()
 
