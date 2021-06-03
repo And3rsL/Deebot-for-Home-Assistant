@@ -114,7 +114,7 @@ class DeebotLastCleanImageSensor(DeebotBaseSensor):
             self.async_write_ha_state()
 
         listener: EventListener = self._vacuum_bot.cleanLogsEvents.subscribe(on_event)
-        self.async_on_remove(listener.unsubscribe())
+        self.async_on_remove(listener.unsubscribe)
 
 
 class DeebotWaterLevelSensor(DeebotBaseSensor):
@@ -132,7 +132,7 @@ class DeebotWaterLevelSensor(DeebotBaseSensor):
             self.async_write_ha_state()
 
         listener: EventListener = self._vacuum_bot.waterEvents.subscribe(on_event)
-        self.async_on_remove(listener.unsubscribe())
+        self.async_on_remove(listener.unsubscribe)
 
 
 class DeebotComponentSensor(DeebotBaseSensor):
@@ -157,7 +157,7 @@ class DeebotComponentSensor(DeebotBaseSensor):
                 self.async_write_ha_state()
 
         listener: EventListener = self._vacuum_bot.lifespanEvents.subscribe(on_event)
-        self.async_on_remove(listener.unsubscribe())
+        self.async_on_remove(listener.unsubscribe)
 
 
 class DeebotStatsSensor(DeebotBaseSensor):
@@ -196,4 +196,4 @@ class DeebotStatsSensor(DeebotBaseSensor):
                 self.async_write_ha_state()
 
         listener: EventListener = self._vacuum_bot.statsEvents.subscribe(on_event)
-        self.async_on_remove(listener.unsubscribe())
+        self.async_on_remove(listener.unsubscribe)

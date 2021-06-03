@@ -83,4 +83,4 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):
             self.async_write_ha_state()
 
         listener: EventListener = self._vacuum_bot.waterEvents.subscribe(on_event)
-        self.async_on_remove(listener.unsubscribe())
+        self.async_on_remove(listener.unsubscribe)
