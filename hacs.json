@@ -4,5 +4,5 @@
   "zip_release": true,
   "filename": "deebot.zip",
   "hide_default_branch": true,
-  "domain": "deebot"
+  "domain": ["deebot", "vacuum", "sensor", "binary_sensor", "camera"]
 }
