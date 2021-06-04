@@ -102,7 +102,7 @@ class DeebotLastCleanImageSensor(DeebotBaseSensor):
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
         listener: EventListener = self._vacbot.cleanLogsEvents.subscribe(lambda _: self.schedule_update_ha_state())
-        self.async_on_remove(listener.unsubscribe())
+        self.async_on_remove(listener.unsubscribe)
 
 
 class DeebotWaterLevelSensor(DeebotBaseSensor):
@@ -127,7 +127,7 @@ class DeebotWaterLevelSensor(DeebotBaseSensor):
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
         listener: EventListener = self._vacbot.waterEvents.subscribe(lambda _: self.schedule_update_ha_state())
-        self.async_on_remove(listener.unsubscribe())
+        self.async_on_remove(listener.unsubscribe)
 
 
 class DeebotComponentSensor(DeebotBaseSensor):
@@ -161,7 +161,7 @@ class DeebotComponentSensor(DeebotBaseSensor):
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
         listener: EventListener = self._vacbot.lifespanEvents.subscribe(lambda _: self.schedule_update_ha_state())
-        self.async_on_remove(listener.unsubscribe())
+        self.async_on_remove(listener.unsubscribe)
 
 
 class DeebotStatsSensor(DeebotBaseSensor):
@@ -205,4 +205,4 @@ class DeebotStatsSensor(DeebotBaseSensor):
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
         listener: EventListener = self._vacbot.statsEvents.subscribe(lambda _: self.schedule_update_ha_state())
-        self.async_on_remove(listener.unsubscribe())
+        self.async_on_remove(listener.unsubscribe)
