@@ -1,10 +1,11 @@
 import logging
 import random
 import string
-from typing import Any, Mapping
+from typing import Any, Mapping, Optional
 
 import aiohttp
 from deebotozmo.ecovacs_api import EcovacsAPI
+from deebotozmo.ecovacs_mqtt import EcovacsMqtt
 from deebotozmo.util import md5
 from deebotozmo.vacuum_bot import VacuumBot
 
@@ -37,6 +38,7 @@ class DeebotHub:
         self._session: aiohttp.ClientSession = aiohttp_client.async_get_clientsession(self._hass,
                                                                                       verify_ssl=self._verify_ssl)
 
+        self._mqtt: Optional[EcovacsMqtt] = None
         self._ecovacs_api = EcovacsAPI(
             self._session,
             DEEBOT_API_DEVICEID,
@@ -50,6 +52,10 @@ class DeebotHub:
     async def async_setup(self):
         try:
             await self._ecovacs_api.login()
+            auth = await self._ecovacs_api.get_request_auth()
+
+            self._mqtt = EcovacsMqtt(auth, self._continent)
+
             devices = await self._ecovacs_api.get_devices()
 
             # CREATE VACBOT FOR EACH DEVICE
@@ -57,13 +63,14 @@ class DeebotHub:
                 if device["name"] in self._config.get(CONF_DEVICES):
                     vacbot = VacuumBot(
                         self._session,
-                        await self._ecovacs_api.get_request_auth(),
+                        auth,
                         device,
                         self._country,
                         self._continent,
                         verify_ssl=self._verify_ssl
                     )
 
+                    self._mqtt.subscribe(vacbot)
                     _LOGGER.debug("New vacbot found: " + device["name"])
                     self.vacuum_bots.append(vacbot)
 
@@ -73,6 +80,10 @@ class DeebotHub:
             raise ConfigEntryNotReady(
                 f"Error during setup"
             ) from err
+
+    def disconnect(self) -> None:
+        self._mqtt.disconnect()
+
 
     @property
     def name(self):

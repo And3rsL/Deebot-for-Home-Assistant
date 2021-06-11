@@ -1,16 +1,17 @@
 """Support for Deebot Vaccums."""
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 from deebotozmo.commands import *
 from deebotozmo.constants import FAN_SPEED_QUIET, FAN_SPEED_NORMAL, FAN_SPEED_MAX, FAN_SPEED_MAXPLUS
 from deebotozmo.events import EventListener, BatteryEvent, RoomsEvent, FanSpeedEvent, StatusEvent
+from deebotozmo.models import Room
 from deebotozmo.vacuum_bot import VacuumBot
-
 from homeassistant.components.vacuum import SUPPORT_BATTERY, SUPPORT_FAN_SPEED, SUPPORT_LOCATE, SUPPORT_PAUSE, \
     SUPPORT_RETURN_HOME, SUPPORT_SEND_COMMAND, SUPPORT_START, SUPPORT_STATE, VacuumEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.util import slugify
+
 from .const import *
 from .helpers import get_device_info
 from .hub import DeebotHub
@@ -64,6 +65,7 @@ class DeebotVacuum(VacuumEntity):
         self._fan_speed = None
         self._available = False
         self._state = None
+        self._rooms: List[Room] = []
 
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
@@ -73,6 +75,7 @@ class DeebotVacuum(VacuumEntity):
             self.async_write_ha_state()
 
         async def on_rooms(event: RoomsEvent):
+            self._rooms = event.rooms
             self.async_write_ha_state()
 
         async def on_fan_speed(event: FanSpeedEvent):
@@ -203,25 +206,24 @@ class DeebotVacuum(VacuumEntity):
         """
         # Needed for custom vacuum-card (https://github.com/denysdovhan/vacuum-card)
         # Should find a better way without breaking everyone rooms script
-        rooms = self._device.map.rooms
-        if rooms is not None:
-            self.att_data = {}
-            for r in rooms:
-                # convert room name to snake_case to meet the convention
-                room_name = "room_" + slugify(r.subtype)
-                room_values = self.att_data.get(room_name)
-                if room_values is None:
-                    self.att_data[room_name] = r.id
-                elif isinstance(room_values, list):
-                    room_values.append(r.id)
-                else:
-                    # Convert from int to list
-                    self.att_data[room_name] = [room_values, r.id]
+
+        attributes = {}
+        for room in self._rooms:
+            # convert room name to snake_case to meet the convention
+            room_name = "room_" + slugify(room.subtype)
+            room_values = attributes.get(room_name)
+            if room_values is None:
+                attributes[room_name] = room.id
+            elif isinstance(room_values, list):
+                room_values.append(room.id)
+            else:
+                # Convert from int to list
+                attributes[room_name] = [room_values, room.id]
 
         if self._device.vacuum_status:
-            self.att_data["status"] = STATE_CODE_TO_STATE[self._device.vacuum_status]
+            attributes["status"] = STATE_CODE_TO_STATE[self._device.vacuum_status]
 
-        return self.att_data
+        return attributes
 
     @property
     def device_info(self) -> Optional[Dict[str, Any]]:
