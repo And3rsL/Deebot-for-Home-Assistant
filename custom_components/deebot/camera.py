@@ -3,6 +3,7 @@ import base64
 import logging
 from typing import Optional, Dict, Any
 
+from deebotozmo.events import EventListener
 from deebotozmo.vacuum_bot import VacuumBot
 from homeassistant.components.camera import Camera
 
@@ -62,8 +63,15 @@ class DeeboLiveCamera(Camera):
         """Return if the entity should be enabled when first added to the entity registry."""
         return False
 
-    # todo
-    # async def async_camera_image(self):
-    #     """Return a still image response from the camera."""
-    #
-    #     return base64.decodebytes(self._vacbot.live_map)
+    async def async_camera_image(self):
+        """Return a still image response from the camera."""
+        return base64.decodebytes(self._vacuum_bot.map.base64Image)
+
+    async def async_added_to_hass(self) -> None:
+        """Set up the event listeners now that hass is ready."""
+
+        async def on_event():
+            self.schedule_update_ha_state()
+
+        listener: EventListener = self._vacuum_bot.map.mapEvents.subscribe(on_event)
+        self.async_on_remove(listener.unsubscribe)

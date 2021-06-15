@@ -8,11 +8,11 @@ from deebotozmo.ecovacs_api import EcovacsAPI
 from deebotozmo.ecovacs_mqtt import EcovacsMqtt
 from deebotozmo.util import md5
 from deebotozmo.vacuum_bot import VacuumBot
-
 from homeassistant.const import CONF_DEVICES
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import aiohttp_client
+
 from .const import *
 
 _LOGGER = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ class DeebotHub:
                         verify_ssl=self._verify_ssl
                     )
 
-                    self._mqtt.subscribe(vacbot)
+                    await self._mqtt.subscribe(vacbot)
                     _LOGGER.debug("New vacbot found: " + device["name"])
                     self.vacuum_bots.append(vacbot)
 
@@ -83,7 +83,6 @@ class DeebotHub:
 
     def disconnect(self) -> None:
         self._mqtt.disconnect()
-
 
     @property
     def name(self):
