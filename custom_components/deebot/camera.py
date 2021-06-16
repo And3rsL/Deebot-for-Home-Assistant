@@ -65,7 +65,7 @@ class DeeboLiveCamera(Camera):
 
     async def async_camera_image(self):
         """Return a still image response from the camera."""
-        return base64.decodebytes(self._vacuum_bot.map.base64Image)
+        return base64.decodebytes(self._vacuum_bot.map.get_base64_map())
 
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
