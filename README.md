@@ -35,7 +35,13 @@ With this Home Assistant Custom Component you'll be able to
 
 ## Configuration
 
-To add your Ecovacs devices into your Home Assistant installation, follow the steps in Home Assistant -> Settings -> Integration -> Add -> Deebot for Home Assistant
+### Installation
+
+To add your Ecovacs devices into your Home Assistant:
+  1. Install [HACS](https://hacs.xyz)
+  2. In HACS: Go to Integrations and search for -> Deebot for Home Assistant <- and install
+  3. Deebot for Home Assistant is now available in Home Assistant under Settings -> Integration -> Add -> Deebot for Home Assistant
+  4. Configure as described below 
 
 ### Chinese server Configuration
 
