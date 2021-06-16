@@ -44,8 +44,8 @@ class DeebotHub:
             DEEBOT_API_DEVICEID,
             config.get(CONF_USERNAME),
             md5(config.get(CONF_PASSWORD)),
-            self._country,
-            self._continent,
+            continent=self._continent,
+            country=self._country,
             verify_ssl=self._verify_ssl
         )
 
@@ -54,7 +54,7 @@ class DeebotHub:
             await self._ecovacs_api.login()
             auth = await self._ecovacs_api.get_request_auth()
 
-            self._mqtt = EcovacsMqtt(auth, self._continent)
+            self._mqtt = EcovacsMqtt(auth, continent=self._continent)
 
             devices = await self._ecovacs_api.get_devices()
 
@@ -65,8 +65,8 @@ class DeebotHub:
                         self._session,
                         auth,
                         device,
-                        self._country,
-                        self._continent,
+                        continent=self._continent,
+                        country=self._country,
                         verify_ssl=self._verify_ssl
                     )
 

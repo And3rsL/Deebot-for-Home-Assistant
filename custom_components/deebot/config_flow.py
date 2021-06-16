@@ -47,8 +47,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             DEEBOT_API_DEVICEID,
             domain_config.get(CONF_USERNAME),
             md5(domain_config.get(CONF_PASSWORD)),
-            domain_config.get(CONF_COUNTRY),
-            domain_config.get(CONF_CONTINENT),
+            continent=domain_config.get(CONF_CONTINENT),
+            country=domain_config.get(CONF_COUNTRY),
             verify_ssl=domain_config.get(CONF_VERIFY_SSL, True)
         )
 
