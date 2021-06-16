@@ -64,7 +64,7 @@ class DeebotVacuum(VacuumEntity):
         self._battery: Optional[int] = None
         self._fan_speed = None
         self._available = False
-        self._state = None
+        self._state: Optional[VacuumState] = None
         self._rooms: List[Room] = []
 
     async def async_added_to_hass(self) -> None:
@@ -118,7 +118,7 @@ class DeebotVacuum(VacuumEntity):
     def state(self):
         """Return the state of the vacuum cleaner."""
         if self._state is not None and self.available:
-            return STATE_CODE_TO_STATE[self._state]
+            return VACUUMSTATE_TO_STATE[self._state]
 
     @property
     def available(self) -> bool:
@@ -221,7 +221,7 @@ class DeebotVacuum(VacuumEntity):
                 attributes[room_name] = [room_values, room.id]
 
         if self._device.vacuum_status:
-            attributes["status"] = STATE_CODE_TO_STATE[self._device.vacuum_status]
+            attributes["status"] = VACUUMSTATE_TO_STATE[self._device.vacuum_status]
 
         return attributes
 
