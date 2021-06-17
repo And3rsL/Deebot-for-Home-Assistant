@@ -47,3 +47,5 @@ BUMPER_CONFIGURATION = {
     CONF_USERNAME: CONF_BUMPER,
     CONF_VERIFY_SSL: False  # required as bumper is using self signed certificates
 }
+
+LAST_ERROR = "last_error"

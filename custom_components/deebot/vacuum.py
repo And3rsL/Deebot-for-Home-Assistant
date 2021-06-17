@@ -4,7 +4,7 @@ from typing import Optional, Dict, Any, List
 
 from deebotozmo.commands import *
 from deebotozmo.constants import FAN_SPEED_QUIET, FAN_SPEED_NORMAL, FAN_SPEED_MAX, FAN_SPEED_MAXPLUS
-from deebotozmo.events import EventListener, BatteryEvent, RoomsEvent, FanSpeedEvent, StatusEvent
+from deebotozmo.events import EventListener, BatteryEvent, RoomsEvent, FanSpeedEvent, StatusEvent, ErrorEvent
 from deebotozmo.models import Room
 from deebotozmo.vacuum_bot import VacuumBot
 from homeassistant.components.vacuum import SUPPORT_BATTERY, SUPPORT_FAN_SPEED, SUPPORT_LOCATE, SUPPORT_PAUSE, \
@@ -49,6 +49,7 @@ def _unsubscribe_listeners(listeners: [EventListener]):
 
 class DeebotVacuum(VacuumEntity):
     """Deebot Vacuums"""
+    _attr_should_poll = False
 
     def __init__(self, hass: HomeAssistant, vacuum_bot: VacuumBot):
         """Initialize the Deebot Vacuum."""
@@ -56,19 +57,23 @@ class DeebotVacuum(VacuumEntity):
         self._device: VacuumBot = vacuum_bot
 
         if self._device.vacuum.nick is not None:
-            self._name: str = self._device.vacuum.nick
+            name: str = self._device.vacuum.nick
         else:
             # In case there is no nickname defined, use the device id
-            self._name = self._device.vacuum.did
+            name = self._device.vacuum.did
 
         self._battery: Optional[int] = None
         self._fan_speed = None
-        self._available = False
         self._state: Optional[VacuumState] = None
         self._rooms: List[Room] = []
+        self._last_error: Optional[ErrorEvent] = None
+
+        self._attr_name = name
+        self._attr_unique_id = self._device.vacuum.did
 
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
+        await super().async_added_to_hass()
 
         async def on_battery(event: BatteryEvent):
             self._battery = event.value
@@ -83,31 +88,20 @@ class DeebotVacuum(VacuumEntity):
             self.async_write_ha_state()
 
         async def on_status(event: StatusEvent):
-            self._available = event.available
+            self._attr_available = event.available
             self._state = event.state
+
+        async def on_error(event: ErrorEvent):
+            self._last_error = event
 
         listeners = [
             self._device.statusEvents.subscribe(on_status),
             self._device.batteryEvents.subscribe(on_battery),
             self._device.map.roomsEvents.subscribe(on_rooms),
-            self._device.fanSpeedEvents.subscribe(on_fan_speed)
+            self._device.fanSpeedEvents.subscribe(on_fan_speed),
+            self._device.errorEvents.subscribe(on_error)
         ]
         self.async_on_remove(lambda: _unsubscribe_listeners(listeners))
-
-    @property
-    def should_poll(self) -> bool:
-        """Return True if entity has to be polled for state."""
-        return False
-
-    @property
-    def unique_id(self) -> str:
-        """Return an unique ID."""
-        return self._device.vacuum.did
-
-    @property
-    def name(self):
-        """Return the name of the device."""
-        return self._name
 
     @property
     def supported_features(self):
@@ -119,11 +113,6 @@ class DeebotVacuum(VacuumEntity):
         """Return the state of the vacuum cleaner."""
         if self._state is not None and self.available:
             return VACUUMSTATE_TO_STATE[self._state]
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        return self._available
 
     async def async_return_to_base(self, **kwargs):
         """Set the vacuum cleaner to return to the dock."""
@@ -222,6 +211,9 @@ class DeebotVacuum(VacuumEntity):
 
         if self._device.vacuum_status:
             attributes["status"] = VACUUMSTATE_TO_STATE[self._device.vacuum_status]
+
+        if self._last_error:
+            attributes[LAST_ERROR] = f"{self._last_error.description} ({self._last_error.code})"
 
         return attributes
 
