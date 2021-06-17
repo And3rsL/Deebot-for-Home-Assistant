@@ -28,47 +28,26 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 class DeebotMopAttachedBinarySensor(BinarySensorEntity):
     """Deebot mop attached binary sensor"""
 
+    _attr_should_poll = False
+    _attr_entity_registry_enabled_default = False
+
     def __init__(self, vacuum_bot: VacuumBot, device_id: str):
         """Initialize the Sensor."""
         self._vacuum_bot: VacuumBot = vacuum_bot
-        self._id: str = device_id
 
         if self._vacuum_bot.vacuum.nick is not None:
-            self._name: str = self._vacuum_bot.vacuum.nick
+            name: str = self._vacuum_bot.vacuum.nick
         else:
             # In case there is no nickname defined, use the device id
-            self._name = self._vacuum_bot.vacuum.did
+            name = self._vacuum_bot.vacuum.did
 
-        self._name += f"_{device_id}"
-        self._mop_attached = False
-
-    @property
-    def unique_id(self) -> str:
-        """Return an unique ID."""
-        return f"{self._vacuum_bot.vacuum.did}_{self._id}"
-
-    @property
-    def name(self):
-        """Return the name of the device."""
-        return self._name
-
-    @property
-    def should_poll(self) -> bool:
-        return False
-
-    @property
-    def is_on(self):
-        return self._mop_attached
+        self._attr_name = f"{name}_{device_id}"
+        self._attr_unique_id = f"{self._vacuum_bot.vacuum.did}_{device_id}"
 
     @property
     def icon(self) -> Optional[str]:
         """Return the icon to use in the frontend, if any."""
         return "mdi:water" if self.is_on else "mdi:water-off"
-
-    @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Return if the entity should be enabled when first added to the entity registry."""
-        return False
 
     @property
     def device_info(self) -> Optional[Dict[str, Any]]:
@@ -79,7 +58,7 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):
         await super().async_added_to_hass()
 
         async def on_event(event: WaterInfoEvent):
-            self._mop_attached = event.mopAttached
+            self._attr_is_on = event.mopAttached
             self.async_write_ha_state()
 
         listener: EventListener = self._vacuum_bot.waterEvents.subscribe(on_event)
