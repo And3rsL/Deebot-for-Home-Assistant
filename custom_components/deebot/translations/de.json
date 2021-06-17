@@ -22,8 +22,6 @@
             },
             "robots": {
                 "data": {
-                    "live_map": "Live-Karte aktiviert",
-                    "show_color_rooms": "Raumfarbe anzeigen [BETA]",
                     "devices": "Geräte"
                 }
             },

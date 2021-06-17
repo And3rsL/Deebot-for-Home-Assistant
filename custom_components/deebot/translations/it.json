@@ -20,8 +20,6 @@
                     "continent": "Continent"
                 },
                 "robots": {
-                    "live_map": "Abilita Live Map",
-                    "show_color_rooms": "Mostra stanze colorate [BETA]",
                     "devices": "Dispositivi"
                 }
             }

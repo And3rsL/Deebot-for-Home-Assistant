@@ -22,8 +22,6 @@
             },
             "robots": {
                 "data": {
-                    "live_map": "Live Map enabled",
-                    "show_color_rooms": "Show room color [BETA]",
                     "devices": "Devices"
                 }
             },
