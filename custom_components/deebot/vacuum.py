@@ -90,9 +90,11 @@ class DeebotVacuum(VacuumEntity):
         async def on_status(event: StatusEvent):
             self._attr_available = event.available
             self._state = event.state
+            self.async_write_ha_state()
 
         async def on_error(event: ErrorEvent):
             self._last_error = event
+            self.async_write_ha_state()
 
         listeners = [
             self._device.statusEvents.subscribe(on_status),
