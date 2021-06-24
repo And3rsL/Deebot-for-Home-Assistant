@@ -169,7 +169,13 @@ class DeebotVacuum(VacuumEntity):
                 self.device.SetWaterLevel, params["amount"]
             )
             return
-
+        
+        if command == "set_true_detect":
+            await self.hass.async_add_executor_job(
+                self.device.SetTrueDetect, params["enable"]
+            )
+            return
+        
         if command == "relocate":
             await self.hass.async_add_executor_job(self.device.Relocate)
             return
