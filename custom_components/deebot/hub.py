@@ -17,11 +17,6 @@ from .const import *
 
 _LOGGER = logging.getLogger(__name__)
 
-# Generate a random device ID on each bootup
-DEEBOT_API_DEVICEID = "".join(
-    random.choice(string.ascii_uppercase + string.digits) for _ in range(8)
-)
-
 
 class DeebotHub:
     """Deebot Hub"""
@@ -38,10 +33,22 @@ class DeebotHub:
         self._session: aiohttp.ClientSession = aiohttp_client.async_get_clientsession(self._hass,
                                                                                       verify_ssl=self._verify_ssl)
 
+        if config.get(CONF_USERNAME) == CONF_BUMPER:
+            try:
+                location_name = hass.config.location_name.strip().replace(' ', '_')
+            except:
+                location_name = ""
+            device_id = f"Deebot-4-HA_{location_name}"
+        else:
+            # Generate a random device ID on each bootup
+            device_id = "".join(
+                random.choice(string.ascii_uppercase + string.digits) for _ in range(12)
+            )
+
         self._mqtt: Optional[EcovacsMqtt] = None
         self._ecovacs_api = EcovacsAPI(
             self._session,
-            DEEBOT_API_DEVICEID,
+            device_id,
             config.get(CONF_USERNAME),
             md5(config.get(CONF_PASSWORD)),
             continent=self._continent,
