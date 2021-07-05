@@ -16,6 +16,10 @@ DEEBOT_API_DEVICEID = "".join(
     random.choice(string.ascii_uppercase + string.digits) for _ in range(8)
 )
 
+DEEBOT_COMPANY_EXCLUDE = ["eco-legacy"]
+DEEBOT_MODEL_EXCLUDE = []
+DEEBOT_DEVICENAME_EXCLUDE = []
+
 
 class DeebotHub:
     """Deebot Hub"""
@@ -49,6 +53,11 @@ class DeebotHub:
 
         # CREATE VACBOT FOR EACH DEVICE
         for device in devices:
+            if device["company"] in DEEBOT_COMPANY_EXCLUDE or device["model"] in DEEBOT_MODEL_EXCLUDE or device["deviceName"] in DEEBOT_DEVICENAME_EXCLUDE:
+                _LOGGER.debug("Device '{}' skipped due to being in the excluded list, device details: {}".format(
+                  device["name"], device))
+                continue
+
             if device["name"] in domain_config.get(CONF_DEVICES):
                 vacbot = VacBot(
                     self.ecovacs_api.uid,
