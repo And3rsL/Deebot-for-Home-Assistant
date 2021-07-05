@@ -3,7 +3,7 @@ import base64
 import logging
 from typing import Optional, Dict, Any
 
-from deebotozmo.events import EventListener
+from deebotozmo.events import EventListener, MapEvent
 from deebotozmo.vacuum_bot import VacuumBot
 from homeassistant.components.camera import Camera
 
@@ -58,7 +58,7 @@ class DeeboLiveCamera(Camera):
         """Set up the event listeners now that hass is ready."""
         await super().async_added_to_hass()
 
-        async def on_event():
+        async def on_event(_: MapEvent):
             self.schedule_update_ha_state()
 
         listener: EventListener = self._vacuum_bot.map.mapEvents.subscribe(on_event)
