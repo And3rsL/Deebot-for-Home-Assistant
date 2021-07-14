@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import random
 import string
@@ -81,6 +82,8 @@ class DeebotHub:
                     _LOGGER.debug("New vacbot found: " + device["name"])
                     self.vacuum_bots.append(vacbot)
 
+            asyncio.create_task(self._check_status_task())
+
             _LOGGER.debug("Hub setup complete")
         except Exception as err:
             # Todo better error handling
@@ -95,3 +98,16 @@ class DeebotHub:
     def name(self):
         """ Return the name of the hub."""
         return "Deebot Hub"
+
+    async def _check_status_task(self):
+        while True:
+            await asyncio.sleep(60)
+            await self._check_status_function()
+
+    async def _check_status_function(self):
+        devices = await self._ecovacs_api.get_devices()
+        for device in devices:
+            bot: VacuumBot
+            for bot in self.vacuum_bots:
+                if device.did == bot.vacuum.did:
+                    bot.set_status(available=True if device.status == 1 else False)

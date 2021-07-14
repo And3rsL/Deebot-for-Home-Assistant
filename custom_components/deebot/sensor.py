@@ -3,7 +3,8 @@ import logging
 from typing import Optional, Dict, Any
 
 from deebotozmo.constants import COMPONENT_MAIN_BRUSH, COMPONENT_SIDE_BRUSH, COMPONENT_FILTER
-from deebotozmo.events import CleanLogEvent, WaterInfoEvent, LifeSpanEvent, StatsEvent, EventListener, ErrorEvent
+from deebotozmo.events import CleanLogEvent, WaterInfoEvent, LifeSpanEvent, StatsEvent, EventListener, ErrorEvent, \
+    StatusEvent
 from deebotozmo.vacuum_bot import VacuumBot
 from homeassistant.const import STATE_UNKNOWN, CONF_DESCRIPTION
 from homeassistant.helpers.entity import Entity
@@ -64,6 +65,18 @@ class DeebotBaseSensor(Entity):
     @property
     def device_info(self) -> Optional[Dict[str, Any]]:
         return get_device_info(self._vacuum_bot)
+
+    async def async_added_to_hass(self) -> None:
+        """Set up the event listeners now that hass is ready."""
+        await super().async_added_to_hass()
+
+        async def on_event(event: StatusEvent):
+            if not event.available:
+                self._attr_state = STATE_UNKNOWN
+                self.async_write_ha_state()
+
+        listener: EventListener = self._vacuum_bot.statusEvents.subscribe(on_event)
+        self.async_on_remove(listener.unsubscribe)
 
 
 class DeebotLastCleanImageSensor(DeebotBaseSensor):
