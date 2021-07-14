@@ -149,6 +149,14 @@ class DeebotVacuum(VacuumEntity):
         """Pause the vacuum cleaner."""
         await self._device.execute_command(CleanPause())
 
+    async def async_start_pause(self, **kwargs):
+        if self._device.vacuum_status == VacuumState.STATE_CLEANING:
+            await self.async_pause()
+        elif self._device.vacuum_status == VacuumState.STATE_PAUSED:
+            await self._device.execute_command(CleanResume())
+        else:
+            await self.async_start()
+
     async def async_start(self):
         """Start the vacuum cleaner."""
         await self._device.execute_command(CleanStart())
