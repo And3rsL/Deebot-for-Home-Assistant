@@ -128,7 +128,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "unknown"
 
         # If there is no user input or there were errors, show the form again, including any errors that were found with the input.
-        robot_listDict = {e["name"]: e["nick"] for e in self.robot_list}
+        robot_listDict = {e["name"]: e.get("nick", e["name"]) for e in self.robot_list}
         options_schema = vol.Schema(
             {
                 vol.Required(
