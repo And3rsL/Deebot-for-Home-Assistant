@@ -109,4 +109,4 @@ class DeebotHub:
             bot: VacuumBot
             for bot in self.vacuum_bots:
                 if device.did == bot.vacuum.did:
-                    bot.set_status(available=True if device.status == 1 else False)
+                    bot.set_available(True if device.status == 1 else False)

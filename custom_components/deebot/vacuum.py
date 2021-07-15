@@ -150,9 +150,9 @@ class DeebotVacuum(VacuumEntity):
         await self._device.execute_command(CleanPause())
 
     async def async_start_pause(self, **kwargs):
-        if self._device.vacuum_status == VacuumState.STATE_CLEANING:
+        if self._device.status.state == VacuumState.STATE_CLEANING:
             await self.async_pause()
-        elif self._device.vacuum_status == VacuumState.STATE_PAUSED:
+        elif self._device.status.state == VacuumState.STATE_PAUSED:
             await self._device.execute_command(CleanResume())
         else:
             await self.async_start()
@@ -219,8 +219,8 @@ class DeebotVacuum(VacuumEntity):
                 # Convert from int to list
                 attributes[room_name] = [room_values, room.id]
 
-        if self._device.vacuum_status:
-            attributes["status"] = VACUUMSTATE_TO_STATE[self._device.vacuum_status]
+        if self._device.status.state:
+            attributes["status"] = VACUUMSTATE_TO_STATE[self._device.status.state]
 
         if self._last_error:
             attributes[LAST_ERROR] = f"{self._last_error.description} ({self._last_error.code})"
