@@ -85,11 +85,10 @@ class DeebotHub:
             asyncio.create_task(self._check_status_task())
 
             _LOGGER.debug("Hub setup complete")
-        except Exception as err:
-            # Todo better error handling
-            raise ConfigEntryNotReady(
-                f"Error during setup"
-            ) from err
+        except Exception as e:
+            msg = "Error during setup"
+            _LOGGER.error(msg, e, exc_info=True)
+            raise ConfigEntryNotReady(msg) from e
 
     def disconnect(self) -> None:
         self._mqtt.disconnect()

@@ -68,12 +68,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 info = await self.async_retrieve_bots(user_input)
                 self.robot_list = info
-            except CannotConnect:
+            except CannotConnect as e:
+                _LOGGER.debug("Cannot connect", e, exc_info=True)
                 errors["base"] = "cannot_connect"
-            except ValueError:
+            except ValueError as e:
+                _LOGGER.debug("Invalid auth", e, exc_info=True)
                 errors["base"] = "invalid_auth"
-            except Exception:
-                _LOGGER.exception("Unexpected exception")
+            except Exception as e:
+                _LOGGER.error("Unexpected exception", e, exc_info=True)
                 errors["base"] = "unknown"
 
             if not errors:
@@ -121,8 +123,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     return self.async_create_entry(
                         title=self.data[CONF_USERNAME], data=self.data
                     )
-            except Exception:
-                _LOGGER.exception("Unexpected exception")
+            except Exception as e:
+                _LOGGER.error("Unexpected exception", e, exc_info=True)
                 errors["base"] = "unknown"
 
         # If there is no user input or there were errors, show the form again, including any errors that were found with the input.
