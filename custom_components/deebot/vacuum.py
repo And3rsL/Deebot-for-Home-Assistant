@@ -1,6 +1,6 @@
 """Support for Deebot Vaccums."""
 import logging
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Mapping
 
 from deebotozmo.commands import *
 from deebotozmo.constants import FAN_SPEED_QUIET, FAN_SPEED_NORMAL, FAN_SPEED_MAX, FAN_SPEED_MAXPLUS
@@ -8,7 +8,8 @@ from deebotozmo.events import EventListener, BatteryEvent, RoomsEvent, FanSpeedE
 from deebotozmo.models import Room
 from deebotozmo.vacuum_bot import VacuumBot
 from homeassistant.components.vacuum import SUPPORT_BATTERY, SUPPORT_FAN_SPEED, SUPPORT_LOCATE, SUPPORT_PAUSE, \
-    SUPPORT_RETURN_HOME, SUPPORT_SEND_COMMAND, SUPPORT_START, SUPPORT_STATE, VacuumEntity
+    SUPPORT_RETURN_HOME, SUPPORT_SEND_COMMAND, SUPPORT_START, SUPPORT_STATE, SUPPORT_STOP, SUPPORT_MAP, \
+    StateVacuumEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.util import slugify
 
@@ -19,14 +20,16 @@ from .hub import DeebotHub
 _LOGGER = logging.getLogger(__name__)
 
 SUPPORT_DEEBOT = (
-        SUPPORT_BATTERY
-        | SUPPORT_FAN_SPEED
-        | SUPPORT_LOCATE
-        | SUPPORT_PAUSE
+        SUPPORT_PAUSE
+        | SUPPORT_STOP
         | SUPPORT_RETURN_HOME
+        | SUPPORT_FAN_SPEED
+        | SUPPORT_BATTERY
         | SUPPORT_SEND_COMMAND
-        | SUPPORT_START
+        | SUPPORT_LOCATE
+        | SUPPORT_MAP
         | SUPPORT_STATE
+        | SUPPORT_START
 )
 
 
@@ -47,7 +50,7 @@ def _unsubscribe_listeners(listeners: [EventListener]):
         listener.unsubscribe()
 
 
-class DeebotVacuum(VacuumEntity):
+class DeebotVacuum(StateVacuumEntity):
     """Deebot Vacuums"""
     _attr_should_poll = False
 
@@ -149,17 +152,12 @@ class DeebotVacuum(VacuumEntity):
         """Pause the vacuum cleaner."""
         await self._device.execute_command(CleanPause())
 
-    async def async_start_pause(self, **kwargs):
-        if self._device.status.state == VacuumState.STATE_CLEANING:
-            await self.async_pause()
-        elif self._device.status.state == VacuumState.STATE_PAUSED:
-            await self._device.execute_command(CleanResume())
-        else:
-            await self.async_start()
-
     async def async_start(self):
         """Start the vacuum cleaner."""
-        await self._device.execute_command(CleanStart())
+        if self._device.status.state == VacuumState.STATE_PAUSED:
+            await self._device.execute_command(CleanResume())
+        else:
+            await self._device.execute_command(CleanStart())
 
     async def async_locate(self, **kwargs):
         """Locate the vacuum cleaner."""
@@ -197,15 +195,12 @@ class DeebotVacuum(VacuumEntity):
             await self._device.execute_command(Command(command, params))
 
     @property
-    def device_state_attributes(self) -> Optional[Dict[str, Any]]:
-        """Return device specific state attributes.
+    def extra_state_attributes(self) -> Optional[Mapping[str, Any]]:
+        """Return entity specific state attributes.
 
         Implemented by platform classes. Convention for attribute names
         is lowercase snake_case.
         """
-        # Needed for custom vacuum-card (https://github.com/denysdovhan/vacuum-card)
-        # Should find a better way without breaking everyone rooms script
-
         attributes = {}
         for room in self._rooms:
             # convert room name to snake_case to meet the convention
@@ -218,9 +213,6 @@ class DeebotVacuum(VacuumEntity):
             else:
                 # Convert from int to list
                 attributes[room_name] = [room_values, room.id]
-
-        if self._device.status.state:
-            attributes["status"] = VACUUMSTATE_TO_STATE[self._device.status.state]
 
         if self._last_error:
             attributes[LAST_ERROR] = f"{self._last_error.description} ({self._last_error.code})"
