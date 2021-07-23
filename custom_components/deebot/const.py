@@ -1,3 +1,4 @@
+from deebotozmo.models import VacuumState
 from homeassistant.components.vacuum import (
     STATE_CLEANING,
     STATE_DOCKED,
@@ -12,7 +13,7 @@ DOMAIN = "deebot"
 INTEGRATION_VERSION = "main"
 ISSUE_URL = "https://github.com/And3rsL/Deebot-for-Home-Assistant/issues"
 
-STARTUP = f"""
+STARTUP_MESSAGE = f"""
 -------------------------------------------------------------------
 {DOMAIN}
 Version: {INTEGRATION_VERSION}
@@ -24,16 +25,14 @@ If you have any issues with this you need to open an issue here:
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
-CONF_LIVEMAP = "live_map"
-CONF_SHOWCOLORROOMS = "show_color_rooms"
 DEEBOT_DEVICES = f"{DOMAIN}_devices"
-STATE_CODE_TO_STATE = {
-    "STATE_IDLE": STATE_IDLE,
-    "STATE_CLEANING": STATE_CLEANING,
-    "STATE_RETURNING": STATE_RETURNING,
-    "STATE_DOCKED": STATE_DOCKED,
-    "STATE_ERROR": STATE_ERROR,
-    "STATE_PAUSED": STATE_PAUSED,
+VACUUMSTATE_TO_STATE = {
+    VacuumState.STATE_IDLE: STATE_IDLE,
+    VacuumState.STATE_CLEANING: STATE_CLEANING,
+    VacuumState.STATE_RETURNING: STATE_RETURNING,
+    VacuumState.STATE_DOCKED: STATE_DOCKED,
+    VacuumState.STATE_ERROR: STATE_ERROR,
+    VacuumState.STATE_PAUSED: STATE_PAUSED,
 }
 
 CONF_BUMPER = "Bumper"
@@ -48,3 +47,5 @@ BUMPER_CONFIGURATION = {
     CONF_USERNAME: CONF_BUMPER,
     CONF_VERIFY_SSL: False  # required as bumper is using self signed certificates
 }
+
+LAST_ERROR = "last_error"

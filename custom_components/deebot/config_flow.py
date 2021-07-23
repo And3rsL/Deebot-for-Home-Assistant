@@ -3,12 +3,14 @@ import logging
 import random
 import string
 
-import voluptuous as vol
-from deebotozmo import EcoVacsAPI
-
 import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
+from deebotozmo.ecovacs_api import EcovacsAPI
+from deebotozmo.util import md5
 from homeassistant import config_entries, exceptions
 from homeassistant.const import CONF_MODE, CONF_DEVICES
+from homeassistant.helpers import aiohttp_client
+
 from .const import *
 
 _LOGGER = logging.getLogger(__name__)
@@ -27,27 +29,6 @@ USER_DATA_SCHEMA = vol.Schema(
     }
 )
 
-ROBOTS_DATA_SCHEMA = vol.Schema(
-    {
-        vol.Optional(CONF_LIVEMAP, default=False): bool,
-        vol.Optional(CONF_SHOWCOLORROOMS, default=False): bool,
-    }
-)
-
-
-def ConfigEntryRetriveRobots(domain_config: dict):
-
-    ecovacs_api = EcoVacsAPI(
-        DEEBOT_API_DEVICEID,
-        domain_config.get(CONF_USERNAME),
-        EcoVacsAPI.md5(domain_config.get(CONF_PASSWORD)),
-        domain_config.get(CONF_COUNTRY),
-        domain_config.get(CONF_CONTINENT),
-        verify_ssl=domain_config.get(CONF_VERIFY_SSL, True)
-    )
-
-    return ecovacs_api.devices()
-
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Deebot."""
@@ -60,6 +41,20 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.robot_list = []
         self.mode = None
 
+    async def async_retrieve_bots(self, domain_config: dict):
+        ecovacs_api = EcovacsAPI(
+            aiohttp_client.async_get_clientsession(self.hass),
+            DEEBOT_API_DEVICEID,
+            domain_config.get(CONF_USERNAME),
+            md5(domain_config.get(CONF_PASSWORD)),
+            continent=domain_config.get(CONF_CONTINENT),
+            country=domain_config.get(CONF_COUNTRY),
+            verify_ssl=domain_config.get(CONF_VERIFY_SSL, True)
+        )
+
+        await ecovacs_api.login()
+        return await ecovacs_api.get_devices()
+
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
         errors = {}
@@ -71,12 +66,16 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors[CONF_CONTINENT] = "invalid_continent"
 
             try:
-                info = await self.hass.async_add_executor_job(ConfigEntryRetriveRobots, user_input)
+                info = await self.async_retrieve_bots(user_input)
                 self.robot_list = info
-            except CannotConnect:
+            except CannotConnect as e:
+                _LOGGER.debug("Cannot connect", e, exc_info=True)
                 errors["base"] = "cannot_connect"
-            except Exception:
-                _LOGGER.exception("Unexpected exception")
+            except ValueError as e:
+                _LOGGER.debug("Invalid auth", e, exc_info=True)
+                errors["base"] = "invalid_auth"
+            except Exception as e:
+                _LOGGER.error("Unexpected exception", e, exc_info=True)
                 errors["base"] = "unknown"
 
             if not errors:
@@ -124,13 +123,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     return self.async_create_entry(
                         title=self.data[CONF_USERNAME], data=self.data
                     )
-            except Exception:
-                _LOGGER.exception("Unexpected exception")
+            except Exception as e:
+                _LOGGER.error("Unexpected exception", e, exc_info=True)
                 errors["base"] = "unknown"
 
         # If there is no user input or there were errors, show the form again, including any errors that were found with the input.
-        robot_listDict = {e["name"]: e["nick"] for e in self.robot_list}
-        options_schema = ROBOTS_DATA_SCHEMA.extend(
+        robot_listDict = {e["name"]: e.get("nick", e["name"]) for e in self.robot_list}
+        options_schema = vol.Schema(
             {
                 vol.Required(
                     CONF_DEVICES, default=list(robot_listDict.keys())

@@ -1,42 +1,44 @@
 """Support for Deebot Vaccums."""
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List, Mapping
 
-from deebotozmo import (
-    FAN_SPEED_QUIET,
-    FAN_SPEED_NORMAL,
-    FAN_SPEED_MAX,
-    FAN_SPEED_MAXPLUS, VacBot, EventListener,
-)
-
+from deebotozmo.commands import *
+from deebotozmo.constants import FAN_SPEED_QUIET, FAN_SPEED_NORMAL, FAN_SPEED_MAX, FAN_SPEED_MAXPLUS
+from deebotozmo.events import EventListener, BatteryEvent, RoomsEvent, FanSpeedEvent, StatusEvent, ErrorEvent
+from deebotozmo.models import Room
+from deebotozmo.vacuum_bot import VacuumBot
 from homeassistant.components.vacuum import SUPPORT_BATTERY, SUPPORT_FAN_SPEED, SUPPORT_LOCATE, SUPPORT_PAUSE, \
-    SUPPORT_RETURN_HOME, SUPPORT_SEND_COMMAND, SUPPORT_START, SUPPORT_STATE, VacuumEntity
+    SUPPORT_RETURN_HOME, SUPPORT_SEND_COMMAND, SUPPORT_START, SUPPORT_STATE, SUPPORT_STOP, SUPPORT_MAP, \
+    StateVacuumEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.util import slugify
 
 from .const import *
 from .helpers import get_device_info
+from .hub import DeebotHub
 
 _LOGGER = logging.getLogger(__name__)
 
 SUPPORT_DEEBOT = (
-        SUPPORT_BATTERY
-        | SUPPORT_FAN_SPEED
-        | SUPPORT_LOCATE
-        | SUPPORT_PAUSE
+        SUPPORT_PAUSE
+        | SUPPORT_STOP
         | SUPPORT_RETURN_HOME
+        | SUPPORT_FAN_SPEED
+        | SUPPORT_BATTERY
         | SUPPORT_SEND_COMMAND
-        | SUPPORT_START
+        | SUPPORT_LOCATE
+        | SUPPORT_MAP
         | SUPPORT_STATE
+        | SUPPORT_START
 )
 
 
-async def async_setup_entry(hass, config_entry, async_add_devices):
+async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_devices):
     """Add sensors for passed config_entry in HA."""
-    hub = hass.data[DOMAIN][config_entry.entry_id]
+    hub: DeebotHub = hass.data[DOMAIN][config_entry.entry_id]
 
     new_devices = []
-    for vacbot in hub.vacbots:
+    for vacbot in hub.vacuum_bots:
         new_devices.append(DeebotVacuum(hass, vacbot))
 
     if new_devices:
@@ -48,52 +50,63 @@ def _unsubscribe_listeners(listeners: [EventListener]):
         listener.unsubscribe()
 
 
-class DeebotVacuum(VacuumEntity):
+class DeebotVacuum(StateVacuumEntity):
     """Deebot Vacuums"""
+    _attr_should_poll = False
 
-    def __init__(self, hass: HomeAssistant, vacbot: VacBot):
+    def __init__(self, hass: HomeAssistant, vacuum_bot: VacuumBot):
         """Initialize the Deebot Vacuum."""
-        self._hass = hass
-        self.device = vacbot
+        self._hass: HomeAssistant = hass
+        self._device: VacuumBot = vacuum_bot
 
-        if self.device.vacuum.get("nick", None) is not None:
-            self._name = "{}".format(self.device.vacuum["nick"])
+        if self._device.vacuum.nick is not None:
+            name: str = self._device.vacuum.nick
         else:
             # In case there is no nickname defined, use the device id
-            self._name = "{}".format(self.device.vacuum["did"])
+            name = self._device.vacuum.did
 
+        self._battery: Optional[int] = None
         self._fan_speed = None
-        self._live_map = None
+        self._state: Optional[VacuumState] = None
+        self._rooms: List[Room] = []
+        self._last_error: Optional[ErrorEvent] = None
 
-        self.att_data = {}
+        self._attr_name = name
+        self._attr_unique_id = self._device.vacuum.did
 
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
+        await super().async_added_to_hass()
+
+        async def on_battery(event: BatteryEvent):
+            self._battery = event.value
+            self.async_write_ha_state()
+
+        async def on_rooms(event: RoomsEvent):
+            self._rooms = event.rooms
+            self.async_write_ha_state()
+
+        async def on_fan_speed(event: FanSpeedEvent):
+            self._fan_speed = event.speed
+            self.async_write_ha_state()
+
+        async def on_status(event: StatusEvent):
+            self._attr_available = event.available
+            self._state = event.state
+            self.async_write_ha_state()
+
+        async def on_error(event: ErrorEvent):
+            self._last_error = event
+            self.async_write_ha_state()
+
         listeners = [
-            self.device.statusEvents.subscribe(lambda _: self.schedule_update_ha_state()),
-            self.device.batteryEvents.subscribe(lambda _: self.schedule_update_ha_state()),
-            self.device.roomEvents.subscribe(lambda _: self.schedule_update_ha_state()),
-            self.device.fanspeedEvents.subscribe(self.on_fan_change)
+            self._device.statusEvents.subscribe(on_status),
+            self._device.batteryEvents.subscribe(on_battery),
+            self._device.map.roomsEvents.subscribe(on_rooms),
+            self._device.fanSpeedEvents.subscribe(on_fan_speed),
+            self._device.errorEvents.subscribe(on_error)
         ]
         self.async_on_remove(lambda: _unsubscribe_listeners(listeners))
-
-    def on_fan_change(self, fan_speed):
-        self._fan_speed = fan_speed
-
-    @property
-    def should_poll(self) -> bool:
-        """Return True if entity has to be polled for state."""
-        return False
-
-    @property
-    def unique_id(self) -> str:
-        """Return an unique ID."""
-        return self.device.vacuum.get("did", None)
-
-    @property
-    def name(self):
-        """Return the name of the device."""
-        return self._name
 
     @property
     def supported_features(self):
@@ -103,124 +116,109 @@ class DeebotVacuum(VacuumEntity):
     @property
     def state(self):
         """Return the state of the vacuum cleaner."""
-        if self.device.vacuum_status is not None and self.device.is_available == True:
-            return STATE_CODE_TO_STATE[self.device.vacuum_status]
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        return self.device.is_available
+        if self._state is not None and self.available:
+            return VACUUMSTATE_TO_STATE[self._state]
 
     async def async_return_to_base(self, **kwargs):
         """Set the vacuum cleaner to return to the dock."""
-        await self.hass.async_add_executor_job(self.device.Charge)
+        await self._device.execute_command(Charge())
 
     @property
     def battery_level(self):
         """Return the battery level of the vacuum cleaner."""
-        if self.device.battery_status is not None:
-            return self.device.battery_status
+        if self._battery is not None:
+            return self._battery
 
         return super().battery_level
 
     @property
     def fan_speed(self):
         """Return the fan speed of the vacuum cleaner."""
-        return self.device.fan_speed
+        return self._fan_speed
 
-    async def async_set_fan_speed(self, fan_speed, **kwargs):
-        await self.hass.async_add_executor_job(self.device.SetFanSpeed, fan_speed)
+    async def async_set_fan_speed(self, fan_speed: str, **kwargs):
+        await self._device.execute_command(SetFanSpeed(fan_speed))
 
     @property
     def fan_speed_list(self):
         """Get the list of available fan speed steps of the vacuum cleaner."""
         return [FAN_SPEED_QUIET, FAN_SPEED_NORMAL, FAN_SPEED_MAX, FAN_SPEED_MAXPLUS]
 
+    async def async_stop(self, **kwargs):
+        """Stop the vacuum cleaner."""
+        await self._device.execute_command(CleanStop())
+
     async def async_pause(self):
         """Pause the vacuum cleaner."""
-        await self.hass.async_add_executor_job(self.device.CleanPause)
+        await self._device.execute_command(CleanPause())
 
     async def async_start(self):
         """Start the vacuum cleaner."""
-        await self.hass.async_add_executor_job(self.device.CleanResume)
+        if self._device.status.state == VacuumState.STATE_PAUSED:
+            await self._device.execute_command(CleanResume())
+        else:
+            await self._device.execute_command(CleanStart())
 
     async def async_locate(self, **kwargs):
         """Locate the vacuum cleaner."""
-        await self.hass.async_add_executor_job(self.device.PlaySound)
+        await self._device.execute_command(PlaySound())
 
     async def async_send_command(self, command, params=None, **kwargs):
         """Send a command to a vacuum cleaner."""
-        _LOGGER.debug("async_send_command %s (%s), %s", command, params, kwargs)
+        _LOGGER.debug(f"async_send_command {command} with {params}")
 
         if command == "spot_area":
-            await self.hass.async_add_executor_job(
-                self.device.SpotArea, params["rooms"], params["cleanings"]
-            )
-            return
-
-        if command == "custom_area":
-            await self.hass.async_add_executor_job(
-                self.device.CustomArea, params["coordinates"], params["cleanings"]
-            )
-            return
-
-        if command == "set_water":
-            await self.hass.async_add_executor_job(
-                self.device.SetWaterLevel, params["amount"]
-            )
-            return
-
-        if command == "relocate":
-            await self.hass.async_add_executor_job(self.device.Relocate)
-            return
-
-        if command == "auto_clean":
-            self.hass.async_add_executor_job(self.device.Clean, params["type"])
-            return
-
-        if command == "refresh_components":
-            await self.hass.async_add_executor_job(self.device.refresh_components)
-            return
-
-        if command == "refresh_statuses":
-            await self.hass.async_add_executor_job(self.device.refresh_statuses)
-            return
-
-        if command == "refresh_live_map":
-            await self.hass.async_add_executor_job(self.device.refresh_liveMap)
-            return
-
-        await self.hass.async_add_executor_job(self.device.exc_command, command, params)
+            await self._device.execute_command(
+                CleanSpotArea(area=str(params["rooms"]), cleanings=params.get("cleanings", 1)))
+        elif command == "custom_area":
+            await self._device.execute_command(CleanCustomArea(
+                map_position=str(params["coordinates"]), cleanings=params.get("cleanings", 1)))
+        elif command == "set_water":
+            await self._device.execute_command(SetWaterLevel(params["amount"]))
+        elif command == "relocate":
+            await self._device.execute_command(Relocate())
+        elif command == "auto_clean":
+            await self._device.execute_command(CleanStart(params.get("type", "auto")))
+        # todo really required?
+        # if command == "refresh_components":
+        #     await self.hass.async_add_executor_job(self.device.refresh_components)
+        #     return
+        #
+        # if command == "refresh_statuses":
+        #     await self.hass.async_add_executor_job(self.device.refresh_statuses)
+        #     return
+        #
+        # if command == "refresh_live_map":
+        #     await self.hass.async_add_executor_job(self.device.refresh_liveMap)
+        #     return
+        else:
+            await self._device.execute_command(Command(command, params))
 
     @property
-    def device_state_attributes(self) -> Optional[Dict[str, Any]]:
-        """Return device specific state attributes.
+    def extra_state_attributes(self) -> Optional[Mapping[str, Any]]:
+        """Return entity specific state attributes.
 
         Implemented by platform classes. Convention for attribute names
         is lowercase snake_case.
         """
-        # Needed for custom vacuum-card (https://github.com/denysdovhan/vacuum-card)
-        # Should find a better way without breaking everyone rooms script
-        savedRooms = self.device.getSavedRooms()
-        if savedRooms is not None:
-            self.att_data = {}
-            for r in savedRooms:
-                # convert room name to snake_case to meet the convention
-                room_name = "room_" + slugify(r["subtype"])
-                room_values = self.att_data.get(room_name)
-                if room_values is None:
-                    self.att_data[room_name] = r["id"]
-                elif isinstance(room_values, list):
-                    room_values.append(r["id"])
-                else:
-                    # Convert from int to list
-                    self.att_data[room_name] = [room_values, r["id"]]
+        attributes = {}
+        for room in self._rooms:
+            # convert room name to snake_case to meet the convention
+            room_name = "room_" + slugify(room.subtype)
+            room_values = attributes.get(room_name)
+            if room_values is None:
+                attributes[room_name] = room.id
+            elif isinstance(room_values, list):
+                room_values.append(room.id)
+            else:
+                # Convert from int to list
+                attributes[room_name] = [room_values, room.id]
 
-        if self.device.vacuum_status:
-            self.att_data["status"] = STATE_CODE_TO_STATE[self.device.vacuum_status]
+        if self._last_error:
+            attributes[LAST_ERROR] = f"{self._last_error.description} ({self._last_error.code})"
 
-        return self.att_data
+        return attributes
 
     @property
     def device_info(self) -> Optional[Dict[str, Any]]:
-        return get_device_info(self.device)
+        return get_device_info(self._device)

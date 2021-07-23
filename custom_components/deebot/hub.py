@@ -1,79 +1,112 @@
+import asyncio
 import logging
 import random
 import string
-import threading
+from typing import Any, Mapping, Optional
 
-from deebotozmo import EcoVacsAPI, VacBot
-
+import aiohttp
+from deebotozmo.ecovacs_api import EcovacsAPI
+from deebotozmo.ecovacs_mqtt import EcovacsMqtt
+from deebotozmo.util import md5
+from deebotozmo.vacuum_bot import VacuumBot
 from homeassistant.const import CONF_DEVICES
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import aiohttp_client
+
 from .const import *
 
 _LOGGER = logging.getLogger(__name__)
-
-# Generate a random device ID on each bootup
-DEEBOT_API_DEVICEID = "".join(
-    random.choice(string.ascii_uppercase + string.digits) for _ in range(8)
-)
 
 
 class DeebotHub:
     """Deebot Hub"""
 
-    def __init__(self, hass: HomeAssistant, domain_config):
+    def __init__(self, hass: HomeAssistant, config: Mapping[str, Any]):
         """Initialize the Deebot Vacuum."""
 
-        self.config = domain_config
-        self._lock = threading.Lock()
-        self.hass = hass
+        self._config: Mapping[str, Any] = config
+        self._hass: HomeAssistant = hass
+        self._country: str = config.get(CONF_COUNTRY).lower()
+        self._continent: str = config.get(CONF_CONTINENT).lower()
+        self.vacuum_bots: [VacuumBot] = []
+        self._verify_ssl = config.get(CONF_VERIFY_SSL, True)
+        self._session: aiohttp.ClientSession = aiohttp_client.async_get_clientsession(self._hass,
+                                                                                      verify_ssl=self._verify_ssl)
 
-        verify_ssl = domain_config.get(CONF_VERIFY_SSL, True)
-        self.ecovacs_api = EcoVacsAPI(
-            DEEBOT_API_DEVICEID,
-            domain_config.get(CONF_USERNAME),
-            EcoVacsAPI.md5(domain_config.get(CONF_PASSWORD)),
-            domain_config.get(CONF_COUNTRY),
-            domain_config.get(CONF_CONTINENT),
-            verify_ssl=verify_ssl
+        if config.get(CONF_USERNAME) == CONF_BUMPER:
+            try:
+                location_name = hass.config.location_name.strip().replace(' ', '_')
+            except:
+                location_name = ""
+            device_id = f"Deebot-4-HA_{location_name}"
+        else:
+            # Generate a random device ID on each bootup
+            device_id = "".join(
+                random.choice(string.ascii_uppercase + string.digits) for _ in range(12)
+            )
+
+        self._mqtt: Optional[EcovacsMqtt] = None
+        self._ecovacs_api = EcovacsAPI(
+            self._session,
+            device_id,
+            config.get(CONF_USERNAME),
+            md5(config.get(CONF_PASSWORD)),
+            continent=self._continent,
+            country=self._country,
+            verify_ssl=self._verify_ssl
         )
 
-        devices = self.ecovacs_api.devices()
+    async def async_setup(self):
+        try:
+            await self._ecovacs_api.login()
+            auth = await self._ecovacs_api.get_request_auth()
 
-        liveMapEnabled = domain_config.get(CONF_LIVEMAP)
-        self.liveMapEnabled = liveMapEnabled
+            self._mqtt = EcovacsMqtt(auth, continent=self._continent)
 
-        liveMapRooms = domain_config.get(CONF_SHOWCOLORROOMS)
-        country = domain_config.get(CONF_COUNTRY).lower()
-        continent = domain_config.get(CONF_CONTINENT).lower()
-        self.vacbots = []
+            devices = await self._ecovacs_api.get_devices()
 
-        # CREATE VACBOT FOR EACH DEVICE
-        for device in devices:
-            if device["name"] in domain_config.get(CONF_DEVICES):
-                vacbot = VacBot(
-                    self.ecovacs_api.uid,
-                    self.ecovacs_api.resource,
-                    self.ecovacs_api.user_access_token,
-                    device,
-                    country,
-                    continent,
-                    liveMapEnabled,
-                    liveMapRooms,
-                    verify_ssl=verify_ssl
-                )
+            # CREATE VACBOT FOR EACH DEVICE
+            for device in devices:
+                if device["name"] in self._config.get(CONF_DEVICES):
+                    vacbot = VacuumBot(
+                        self._session,
+                        auth,
+                        device,
+                        continent=self._continent,
+                        country=self._country,
+                        verify_ssl=self._verify_ssl
+                    )
 
-                _LOGGER.debug("New vacbot found: " + device["name"])
-                
-                self.hass.async_add_executor_job(vacbot.setScheduleUpdates)
-                self.vacbots.append(vacbot)
+                    await self._mqtt.subscribe(vacbot)
+                    _LOGGER.debug("New vacbot found: " + device["name"])
+                    self.vacuum_bots.append(vacbot)
 
-        _LOGGER.debug("Hub initialized")
+            asyncio.create_task(self._check_status_task())
 
-    def disconnect(self):
-        for device in self.vacbots:
-            device.disconnect()
+            _LOGGER.debug("Hub setup complete")
+        except Exception as e:
+            msg = "Error during setup"
+            _LOGGER.error(msg, e, exc_info=True)
+            raise ConfigEntryNotReady(msg) from e
+
+    def disconnect(self) -> None:
+        self._mqtt.disconnect()
 
     @property
     def name(self):
         """ Return the name of the hub."""
         return "Deebot Hub"
+
+    async def _check_status_task(self):
+        while True:
+            await asyncio.sleep(60)
+            await self._check_status_function()
+
+    async def _check_status_function(self):
+        devices = await self._ecovacs_api.get_devices()
+        for device in devices:
+            bot: VacuumBot
+            for bot in self.vacuum_bots:
+                if device.did == bot.vacuum.did:
+                    bot.set_available(True if device.status == 1 else False)
