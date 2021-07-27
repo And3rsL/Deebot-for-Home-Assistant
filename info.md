@@ -3,7 +3,7 @@
 
 # Home Assistant Custom Component for Ecovacs vacuum cleaner
 
-![Preview](images/prev.jpg)
+![Preview](docs/images/prev.jpg)
 
 # Know working models:
 
@@ -59,7 +59,7 @@ Your two-letter continent code (as, na, eu, ww).
 ```
 TW, MY, JP, SG, TH, HK, IN, KR -> AS
 US -> NA
-FR, ES, UK, NO, MX, DE, PT, CH, AU, IT, NL, SE, BE, DK -> EU
+FR, ES, UK, NO, MX, DE, PT, CH, AT, IT, NL, SE, BE, DK -> EU
 Any other country -> WW
 ```
 
@@ -88,54 +88,11 @@ If is true live_map it will try to generate a live map camera feed
 
 - camera.ROBOTNAME_liveMap
 
-### Suggested yaml component
+## UI examples
 
-A suggested custom lovelace card that i use is: vacuum-card by denysdovhan link: https://github.com/denysdovhan/vacuum-card
+UI examples can be found in the [examples folder](docs/examples)
 
-My configuration:
-
-```
-type: 'custom:vacuum-card'
-entity: vacuum.YOURROBOTNAME
-image: default
-compact_view: false
-show_name: true
-show_toolbar: true
-show_status: true
-stats:
-  default:
-    - entity_id: sensor.YOURROBOTNAME_sidebrush
-      unit: '%'
-      subtitle: Side Brush
-    - entity_id: sensor.YOURROBOTNAME_brush
-      unit: '%'
-      subtitle: Main Brush
-    - entity_id: sensor.YOURROBOTNAME_heap
-      unit: '%'
-      subtitle: Heap
-  cleaning:
-    - entity_id: sensor.YOURROBOTNAME_stats_area
-      unit: m2
-      subtitle: Area
-    - entity_id: sensor.YOURROBOTNAME_stats_time
-      unit: min
-      subtitle: Time
-actions:
-  - service: script.CLEAN_LIVINGROOM
-    icon: 'mdi:sofa'
-  - service: script.CLEAN_BEDROOM
-    icon: 'mdi:bed-empty'
-  - service: script.CLEAN_ALL
-    icon: 'mdi:robot-vacuum-variant'
-map: camera.YOURLIVEMAP_CAMERA
-
-```
-
-Something like this should be the result:
-
-![Preview](images/custom_vacuum_card.jpg)
-
-### Templates
+## Templates
 
 Example for fan_speed:
 
@@ -153,7 +110,7 @@ Get room numbers dynamically, very helpfull if your robot is multi-floor or if y
 
 Relocate Robot (the little GPS icon in the APP)
 
-```
+```yaml
 # Relocate Robot
 entity_id: vacuum.YOUR_ROBOT_NAME
 command: relocate
@@ -161,7 +118,7 @@ command: relocate
 
 You can clean certain area by specify it in rooms params, you can find room number under vacuum attributes
 
-```
+```yaml
 # Clean Area
 entity_id: vacuum.YOUR_ROBOT_NAME
 command: spot_area
@@ -170,7 +127,7 @@ params:
   cleanings: 1
 ```
 
-```
+```yaml
 # Customize Clean
 # You can get coordinates with fiddler and the official APP [Advance User]
 entity_id: vacuum.YOUR_ROBOT_NAME
@@ -179,7 +136,7 @@ params:
   coordinates: -1339,-1511,296,-2587
 ```
 
-```
+```yaml
 # Set Water Level
 Possible amount values: low|medium|high|ultrahigh
 example:
@@ -190,7 +147,7 @@ params:
   amount: ultrahigh
 ```
 
-```
+```yaml
 # Clean
 Possible values: auto
 example:
@@ -205,7 +162,7 @@ params:
 
 If you have an issue with this component, please file a GitHub Issue and include your Home Assistant logs in the report. To get full debug output from both the Ecovacs integration and the underlying deebotozmo library, place this in your configuration.yaml file:
 
-```
+```yaml
 logger:
   logs:
     homeassistant.components.deebot: debug
@@ -218,4 +175,4 @@ Warning: doing this will cause your authentication token to visible in your log 
 
 ### Misc
 
-An SVG of the Deebot 950 can be found under [images](images/deebot950.svg)
+An SVG of the Deebot 950 can be found under [images](docs/images/deebot950.svg)
