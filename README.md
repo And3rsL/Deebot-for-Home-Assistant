@@ -65,7 +65,7 @@ Your two-letter continent code (as, na, eu, ww).
 ```
 TW, MY, JP, SG, TH, HK, IN, KR -> AS
 US -> NA
-FR, ES, UK, NO, MX, DE, PT, CH, AU, IT, NL, SE, BE, DK -> EU
+FR, ES, UK, NO, MX, DE, PT, CH, AT, IT, NL, SE, BE, DK -> EU
 Any other country -> WW
 ```
 
