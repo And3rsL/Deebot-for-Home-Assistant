@@ -1,0 +1,33 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Déjà configuré"
+        },
+        "error": {
+            "cannot_connect": "Connection impossible à l'API ecovacs",
+            "invalid_auth": "Nom d’utilisateur ou mot de passe incorrect",
+            "unknown": "Erreur inconnue",
+            "invalid_country":"Le code du pays doit être en deux lettres, ex: fr, be, us, etc ",
+            "invalid_continent":"Le code du continent doit être en deux lettres, ex: eu, ww, etc ",
+            "select_robots": "Sélectionnez au moins 1 robot"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "password": "Mot de passe",
+                    "username": "E-mail ou Ecovacs ID",
+                    "country": "Pays",
+                    "continent": "Continent"
+                }
+            },
+            "robots": {
+                "data": {
+                    "devices": "Appareils"
+                }
+            },
+            "user_advanced": {
+                "description": "Sélectionnez \"Bumper\" SEULEMENT si vous avez déjà une instance bumper fonctionnelle. Sinon, sélectionnez \"Cloud\" s'il vous plait."
+            }
+        }
+   }
+}
