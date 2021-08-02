@@ -1,0 +1,45 @@
+name: Suggest an feature/idea
+description: Suggest an feature/idea
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This issue form is for reporting features or ideas only!
+
+        If you have a bug/issue or a question, please use the other templates.
+  - type: checkboxes
+    attributes:
+      label: Is there an existing issue for this?
+      description: Please search to see if an issue already exists for your feature request or idea
+      options:
+      - label: I have searched the existing issues and no issue is describing my feature request or idea
+        required: true
+
+  - type: textarea
+    attributes:
+      label: Is your feature request related to a problem?
+      description: >
+        A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: Suggested solution
+      description: >
+        A clear and concise description of what you want to happen.
+
+  - type: textarea
+    attributes:
+      label: Alternatives you've considered
+      description: >
+        A clear and concise description of any alternative solutions or features you've considered.
+
+  - type: textarea
+    attributes:
+      label: Additional information
+      description: >
+        If you have any additional information for us, use the field below.
+        Please note, you can attach screenshots or screen recordings here, by
+        dragging and dropping files in the field below.

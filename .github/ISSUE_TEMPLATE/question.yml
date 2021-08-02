@@ -1,0 +1,24 @@
+name: Ask a question
+description: Ask a question
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This issue form is for questions!
+
+        If you have a bug/issue or a feature request, please use the other templates.
+
+  - type: textarea
+    attributes:
+      label: Question
+      description: >
+        A clear and concise description
+
+  - type: textarea
+    attributes:
+      label: Additional information
+      description: >
+        If you have any additional information for us, use the field below.
+        Please note, you can attach screenshots or screen recordings here, by
+        dragging and dropping files in the field below.
