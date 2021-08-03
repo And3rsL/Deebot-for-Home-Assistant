@@ -1,0 +1,127 @@
+name: Report an issue
+description: Report an issue
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This issue form is for reporting bugs only!
+
+        If you have a feature request or a question, please use the other templates.
+  - type: checkboxes
+    attributes:
+      label: Is there an existing issue for this?
+      description: Please search to see if an issue already exists for the bug you encountered.
+      options:
+      - label: I have searched the existing issues and no issue is describing my issue
+        required: true
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: The problem
+      description: >-
+        Describe the issue you are experiencing here to communicate to the
+        maintainers. Tell us what you were trying to do and what happened.
+
+        Provide a clear and concise description of what the problem is.
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Environment
+  - type: input
+    id: device
+    validations:
+      required: true
+    attributes:
+      label: On which deebot vacuum you have the issue?
+      placeholder: Deebot Ozmo 950
+  - type: input
+    id: version
+    validations:
+      required: true
+    attributes:
+      label: Which version of the Deebot component are you using?
+      placeholder: X.X.X
+      description: >
+        Will be logged during starting on Level Info. Can be found in the log file.
+  - type: input
+    id: ha_version
+    validations:
+      required: true
+    attributes:
+      label: Which version of Home Assistant are you using?
+      placeholder: 202X.X.X
+      description: >
+        Can be found in the Configuration panel -> Info.
+  - type: dropdown
+    validations:
+      required: true
+    attributes:
+      label: What type of installation are you running?
+      description: >
+        If you don't know, you can find it in: Configuration panel -> Info.
+      options:
+        - Home Assistant OS
+        - Home Assistant Container
+        - Home Assistant Supervised
+        - Home Assistant Core
+
+  - type: markdown
+    attributes:
+      value: |
+        # Configuration
+  - type: input
+    id: country
+    validations:
+      required: true
+    attributes:
+      label: Country
+      placeholder: it
+      description: >
+        Which country did you input during the setup of the integration?
+  - type: input
+    id: continent
+    validations:
+      required: true
+    attributes:
+      label: Continent
+      placeholder: eu
+      description: >
+        Which continent did you input during the setup of the integration?
+  - type: dropdown
+    attributes:
+      label: Instance type
+      description: >
+        If you don't know, please select "Cloud". If you have running a bumper instance and you are using it,
+        then and ONLY then select "Bumper"
+      options:
+        - Cloud
+        - Bumper
+
+  - type: markdown
+    attributes:
+      value: |
+        # Details
+  - type: textarea
+    attributes:
+      label: Anything in the logs that might be useful for us?
+      description: >
+        For example, error message, or stack traces.
+
+        Please filter the logs before adding it on:
+          - deebotozmo
+          - custom_components.deebot
+          - homeassistant.components.vacuum
+
+        If you have multiple vacuums please add the logs only for the relevant one.
+      render: txt
+  - type: textarea
+    attributes:
+      label: Additional information
+      description: >
+        If you have any additional information for us, use the field below.
+        Please note, you can attach screenshots or screen recordings here, by
+        dragging and dropping files in the field below.
