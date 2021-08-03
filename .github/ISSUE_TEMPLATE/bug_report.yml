@@ -81,7 +81,7 @@ body:
       label: Country
       placeholder: it
       description: >
-        Which country did you inout during the setup of the integration?
+        Which country did you input during the setup of the integration?
   - type: input
     id: continent
     validations:
@@ -90,13 +90,13 @@ body:
       label: Continent
       placeholder: eu
       description: >
-        Which continent did you inout during the setup of the integration?
+        Which continent did you input during the setup of the integration?
   - type: dropdown
     attributes:
       label: Instance type
       description: >
-        If you don't know, please select cloud. If you have running a bumper instance and you are using it,
-        then and ONLY then select "bumper"
+        If you don't know, please select "Cloud". If you have running a bumper instance and you are using it,
+        then and ONLY then select "Bumper"
       options:
         - Cloud
         - Bumper
