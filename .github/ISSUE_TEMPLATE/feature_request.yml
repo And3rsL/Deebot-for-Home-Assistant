@@ -32,6 +32,14 @@ body:
 
   - type: textarea
     attributes:
+      label: Api example request
+      description: >
+        If for your feature a sample requests exist, please paste it here.
+        This speed things up, specially for new commands
+      render: txt
+
+  - type: textarea
+    attributes:
       label: Alternatives you've considered
       description: >
         A clear and concise description of any alternative solutions or features you've considered.
