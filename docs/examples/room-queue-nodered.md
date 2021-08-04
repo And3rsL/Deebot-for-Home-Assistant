@@ -8,7 +8,7 @@ Main advantage is the capability to add rooms on the fly without interrupting cu
 ![Preview](../images/room-queue-nodered_flow.png)
 
 Adding a room to the queue can be done by triggering the event `walleroom` with the following data. Injecting the data by replacing the event-node is possible, too.
-```
+```yaml
 type: room
 room: '{{ states.vacuum.wall_e.attributes.room_study}}'
 count: 1
