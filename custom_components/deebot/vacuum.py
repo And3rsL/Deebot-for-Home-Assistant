@@ -2,6 +2,7 @@
 import logging
 from typing import Optional, Dict, Any, List, Mapping
 
+import voluptuous as vol
 from deebotozmo.commands import *
 from deebotozmo.constants import FAN_SPEED_QUIET, FAN_SPEED_NORMAL, FAN_SPEED_MAX, FAN_SPEED_MAXPLUS
 from deebotozmo.events import EventListener, BatteryEvent, RoomsEvent, FanSpeedEvent, StatusEvent, ErrorEvent
@@ -11,6 +12,7 @@ from homeassistant.components.vacuum import SUPPORT_BATTERY, SUPPORT_FAN_SPEED, 
     SUPPORT_RETURN_HOME, SUPPORT_SEND_COMMAND, SUPPORT_START, SUPPORT_STATE, SUPPORT_STOP, SUPPORT_MAP, \
     StateVacuumEntity
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_platform
 from homeassistant.util import slugify
 
 from .const import *
@@ -32,6 +34,26 @@ SUPPORT_DEEBOT = (
         | SUPPORT_START
 )
 
+# Must be kept in sync with services.yaml
+SERVICE_REFRESH = "refresh"
+SERVICE_REFRESH_PART = "part"
+SERVICE_REFRESH_SCHEMA = {
+    vol.Required(SERVICE_REFRESH_PART): vol.In(
+        [
+            EVENT_STATUS,
+            EVENT_ERROR,
+            EVENT_FAN_SPEED,
+            EVENT_CLEAN_LOGS,
+            EVENT_WATER,
+            EVENT_BATTERY,
+            EVENT_STATS,
+            EVENT_LIFE_SPAN,
+            EVENT_ROOMS,
+            EVENT_MAP,
+        ]
+    )
+}
+
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_devices):
     """Add sensors for passed config_entry in HA."""
@@ -43,6 +65,14 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_devices
 
     if new_devices:
         async_add_devices(new_devices)
+
+    platform = entity_platform.async_get_current_platform()
+
+    platform.async_register_entity_service(
+        SERVICE_REFRESH,
+        SERVICE_REFRESH_SCHEMA,
+        "_service_refresh",
+    )
 
 
 def _unsubscribe_listeners(listeners: [EventListener]):
@@ -119,10 +149,6 @@ class DeebotVacuum(StateVacuumEntity):
         if self._state is not None and self.available:
             return VACUUMSTATE_TO_STATE[self._state]
 
-    async def async_return_to_base(self, **kwargs):
-        """Set the vacuum cleaner to return to the dock."""
-        await self._device.execute_command(Charge())
-
     @property
     def battery_level(self):
         """Return the battery level of the vacuum cleaner."""
@@ -136,13 +162,46 @@ class DeebotVacuum(StateVacuumEntity):
         """Return the fan speed of the vacuum cleaner."""
         return self._fan_speed
 
-    async def async_set_fan_speed(self, fan_speed: str, **kwargs):
-        await self._device.execute_command(SetFanSpeed(fan_speed))
-
     @property
     def fan_speed_list(self):
         """Get the list of available fan speed steps of the vacuum cleaner."""
         return [FAN_SPEED_QUIET, FAN_SPEED_NORMAL, FAN_SPEED_MAX, FAN_SPEED_MAXPLUS]
+
+    @property
+    def extra_state_attributes(self) -> Optional[Mapping[str, Any]]:
+        """Return entity specific state attributes.
+
+        Implemented by platform classes. Convention for attribute names
+        is lowercase snake_case.
+        """
+        attributes = {}
+        for room in self._rooms:
+            # convert room name to snake_case to meet the convention
+            room_name = "room_" + slugify(room.subtype)
+            room_values = attributes.get(room_name)
+            if room_values is None:
+                attributes[room_name] = room.id
+            elif isinstance(room_values, list):
+                room_values.append(room.id)
+            else:
+                # Convert from int to list
+                attributes[room_name] = [room_values, room.id]
+
+        if self._last_error:
+            attributes[LAST_ERROR] = f"{self._last_error.description} ({self._last_error.code})"
+
+        return attributes
+
+    @property
+    def device_info(self) -> Optional[Dict[str, Any]]:
+        return get_device_info(self._device)
+
+    async def async_set_fan_speed(self, fan_speed: str, **kwargs):
+        await self._device.execute_command(SetFanSpeed(fan_speed))
+
+    async def async_return_to_base(self, **kwargs):
+        """Set the vacuum cleaner to return to the dock."""
+        await self._device.execute_command(Charge())
 
     async def async_stop(self, **kwargs):
         """Stop the vacuum cleaner."""
@@ -179,46 +238,31 @@ class DeebotVacuum(StateVacuumEntity):
             await self._device.execute_command(Relocate())
         elif command == "auto_clean":
             await self._device.execute_command(CleanStart(params.get("type", "auto")))
-        # todo really required?
-        # if command == "refresh_components":
-        #     await self.hass.async_add_executor_job(self.device.refresh_components)
-        #     return
-        #
-        # if command == "refresh_statuses":
-        #     await self.hass.async_add_executor_job(self.device.refresh_statuses)
-        #     return
-        #
-        # if command == "refresh_live_map":
-        #     await self.hass.async_add_executor_job(self.device.refresh_liveMap)
-        #     return
         else:
             await self._device.execute_command(Command(command, params))
 
-    @property
-    def extra_state_attributes(self) -> Optional[Mapping[str, Any]]:
-        """Return entity specific state attributes.
-
-        Implemented by platform classes. Convention for attribute names
-        is lowercase snake_case.
-        """
-        attributes = {}
-        for room in self._rooms:
-            # convert room name to snake_case to meet the convention
-            room_name = "room_" + slugify(room.subtype)
-            room_values = attributes.get(room_name)
-            if room_values is None:
-                attributes[room_name] = room.id
-            elif isinstance(room_values, list):
-                room_values.append(room.id)
-            else:
-                # Convert from int to list
-                attributes[room_name] = [room_values, room.id]
-
-        if self._last_error:
-            attributes[LAST_ERROR] = f"{self._last_error.description} ({self._last_error.code})"
-
-        return attributes
-
-    @property
-    def device_info(self) -> Optional[Dict[str, Any]]:
-        return get_device_info(self._device)
+    def _service_refresh(self, part: str) -> None:
+        """Service to manually refresh"""
+        _LOGGER.debug(f"Manually refresh {part}")
+        if part == EVENT_STATUS:
+            self._device.statusEvents.request_refresh()
+        elif part == EVENT_ERROR:
+            self._device.errorEvents.request_refresh()
+        elif part == EVENT_FAN_SPEED:
+            self._device.fanSpeedEvents.request_refresh()
+        elif part == EVENT_CLEAN_LOGS:
+            self._device.cleanLogsEvents.request_refresh()
+        elif part == EVENT_WATER:
+            self._device.waterEvents.request_refresh()
+        elif part == EVENT_BATTERY:
+            self._device.batteryEvents.request_refresh()
+        elif part == EVENT_STATS:
+            self._device.statsEvents.request_refresh()
+        elif part == EVENT_LIFE_SPAN:
+            self._device.lifespanEvents.request_refresh()
+        elif part == EVENT_ROOMS:
+            self._device.map.roomsEvents.request_refresh()
+        elif part == EVENT_MAP:
+            self._device.map.mapEvents.request_refresh()
+        else:
+            _LOGGER.warning(f"Service \"refresh\" called with unknown part: {part}")

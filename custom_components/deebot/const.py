@@ -49,3 +49,14 @@ BUMPER_CONFIGURATION = {
 }
 
 LAST_ERROR = "last_error"
+
+EVENT_STATUS = "Status"
+EVENT_ERROR = "Error"
+EVENT_FAN_SPEED = "Fan speed"
+EVENT_CLEAN_LOGS = "Clean logs"
+EVENT_WATER = "Water"
+EVENT_BATTERY = "Battery"
+EVENT_STATS = "Stats"
+EVENT_LIFE_SPAN = "Life spans"
+EVENT_ROOMS = "Rooms"
+EVENT_MAP = "Map"
