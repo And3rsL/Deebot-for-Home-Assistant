@@ -1,0 +1,28 @@
+refresh: # Must be kept in sync with vacuum.py
+  name: Manually refresh
+  description: Manually request a refresh
+  target:
+    entity:
+      integration: deebot
+      domain: vacuum
+  fields:
+    part:
+      name: Part
+      description: Which part should be refreshed?
+      required: true
+      advanced: false
+      example: "Status"
+      default: "Status"
+      selector:
+        select:
+          options:
+            - "Status"
+            - "Error"
+            - "Fan speed"
+            - "Clean logs"
+            - "Water"
+            - "Battery"
+            - "Stats"
+            - "Life spans"
+            - "Rooms"
+            - "Map"
