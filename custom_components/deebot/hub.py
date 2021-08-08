@@ -34,13 +34,9 @@ class DeebotHub:
         self._session: aiohttp.ClientSession = aiohttp_client.async_get_clientsession(self._hass,
                                                                                       verify_ssl=self._verify_ssl)
 
-        if config.get(CONF_USERNAME) == CONF_BUMPER:
-            try:
-                location_name = hass.config.location_name.strip().replace(' ', '_')
-            except:
-                location_name = ""
-            device_id = f"Deebot-4-HA_{location_name}"
-        else:
+        device_id = config.get(CONF_CLIENT_DEVICE_ID)
+
+        if not device_id:
             # Generate a random device ID on each bootup
             device_id = "".join(
                 random.choice(string.ascii_uppercase + string.digits) for _ in range(12)

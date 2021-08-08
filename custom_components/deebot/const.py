@@ -25,19 +25,10 @@ If you have any issues with this you need to open an issue here:
 
 CONF_COUNTRY = "country"
 CONF_CONTINENT = "continent"
-DEEBOT_DEVICES = f"{DOMAIN}_devices"
-VACUUMSTATE_TO_STATE = {
-    VacuumState.STATE_IDLE: STATE_IDLE,
-    VacuumState.STATE_CLEANING: STATE_CLEANING,
-    VacuumState.STATE_RETURNING: STATE_RETURNING,
-    VacuumState.STATE_DOCKED: STATE_DOCKED,
-    VacuumState.STATE_ERROR: STATE_ERROR,
-    VacuumState.STATE_PAUSED: STATE_PAUSED,
-}
-
 CONF_BUMPER = "Bumper"
 CONF_MODE_BUMPER = CONF_BUMPER
 CONF_MODE_CLOUD = "Cloud (recommended)"
+CONF_CLIENT_DEVICE_ID = "client_device_id"
 
 # Bumper has no auth and serves the urls for all countries/continents
 BUMPER_CONFIGURATION = {
@@ -46,6 +37,17 @@ BUMPER_CONFIGURATION = {
     CONF_PASSWORD: CONF_BUMPER,
     CONF_USERNAME: CONF_BUMPER,
     CONF_VERIFY_SSL: False  # required as bumper is using self signed certificates
+}
+
+DEEBOT_DEVICES = f"{DOMAIN}_devices"
+
+VACUUMSTATE_TO_STATE = {
+    VacuumState.STATE_IDLE: STATE_IDLE,
+    VacuumState.STATE_CLEANING: STATE_CLEANING,
+    VacuumState.STATE_RETURNING: STATE_RETURNING,
+    VacuumState.STATE_DOCKED: STATE_DOCKED,
+    VacuumState.STATE_ERROR: STATE_ERROR,
+    VacuumState.STATE_PAUSED: STATE_PAUSED,
 }
 
 LAST_ERROR = "last_error"

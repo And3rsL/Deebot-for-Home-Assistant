@@ -12,6 +12,7 @@ from homeassistant.const import CONF_MODE, CONF_DEVICES
 from homeassistant.helpers import aiohttp_client
 
 from .const import *
+from .helpers import get_bumper_device_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,7 +34,7 @@ USER_DATA_SCHEMA = vol.Schema(
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Deebot."""
 
-    VERSION = 2
+    VERSION = 3
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
 
     def __init__(self) -> None:
@@ -94,7 +95,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self.mode = user_input.get(CONF_MODE, CONF_MODE_CLOUD)
             if self.mode == CONF_MODE_BUMPER:
-                return await self.async_step_user(user_input=BUMPER_CONFIGURATION)
+                config = {
+                    **BUMPER_CONFIGURATION,
+                    CONF_CLIENT_DEVICE_ID: get_bumper_device_id(self.hass)
+                }
+                return await self.async_step_user(user_input=config)
 
             return await self.async_step_user()
 
