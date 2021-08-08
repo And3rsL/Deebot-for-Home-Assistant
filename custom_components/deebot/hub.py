@@ -62,7 +62,7 @@ class DeebotHub:
             await self._ecovacs_api.login()
             auth = await self._ecovacs_api.get_request_auth()
 
-            self._mqtt = EcovacsMqtt(auth, continent=self._continent)
+            self._mqtt = EcovacsMqtt(auth, continent=self._continent, country=self._country)
 
             devices = await self._ecovacs_api.get_devices()
 
