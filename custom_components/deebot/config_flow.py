@@ -5,9 +5,10 @@ import string
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+from aiohttp import ClientError
 from deebotozmo.ecovacs_api import EcovacsAPI
 from deebotozmo.util import md5
-from homeassistant import config_entries, exceptions
+from homeassistant import config_entries
 from homeassistant.const import CONF_MODE, CONF_DEVICES
 from homeassistant.helpers import aiohttp_client
 
@@ -68,7 +69,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 info = await self.async_retrieve_bots(user_input)
                 self.robot_list = info
-            except CannotConnect as e:
+            except ClientError as e:
                 _LOGGER.debug("Cannot connect", e, exc_info=True)
                 errors["base"] = "cannot_connect"
             except ValueError as e:
@@ -140,7 +141,3 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="robots", data_schema=options_schema, errors=errors
         )
-
-
-class CannotConnect(exceptions.HomeAssistantError):
-    """Error to indicate we cannot connect."""
