@@ -5,6 +5,7 @@ import string
 from typing import Any, Mapping, Optional
 
 import aiohttp
+from aiohttp import ClientError
 from deebotozmo.ecovacs_api import EcovacsAPI
 from deebotozmo.ecovacs_mqtt import EcovacsMqtt
 from deebotozmo.util import md5
@@ -96,8 +97,13 @@ class DeebotHub:
 
     async def _check_status_task(self):
         while True:
-            await asyncio.sleep(60)
-            await self._check_status_function()
+            try:
+                await asyncio.sleep(60)
+                await self._check_status_function()
+            except ClientError as e:
+                _LOGGER.warning(f"A client error occurred, probably the ecovacs servers are unstable: {e}")
+            except Exception as e:
+                _LOGGER.error(f"Unknown exception occurred: {e}")
 
     async def _check_status_function(self):
         devices = await self._ecovacs_api.get_devices()
