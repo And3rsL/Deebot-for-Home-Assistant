@@ -1,10 +1,14 @@
+from typing import Optional, Dict
+
 from deebotozmo.models import Vacuum
 from deebotozmo.vacuum_bot import VacuumBot
+from homeassistant.core import HomeAssistant
+from homeassistant.util import uuid
 
 from .const import DOMAIN
 
 
-def get_device_info(vacuum_bot: VacuumBot):
+def get_device_info(vacuum_bot: VacuumBot) -> Optional[Dict]:
     device: Vacuum = vacuum_bot.vacuum
     identifiers = set()
     if device.did:
@@ -23,3 +27,11 @@ def get_device_info(vacuum_bot: VacuumBot):
         "model": device.get("deviceName", "Deebot vacuum"),
         "sw_version": vacuum_bot.fw_version,
     }
+
+
+def get_bumper_device_id(hass: HomeAssistant) -> str:
+    try:
+        location_name = hass.config.location_name.strip().replace(' ', '_')
+    except:
+        location_name = ""
+    return f"Deebot-4-HA_{location_name}_{uuid.random_uuid_hex()[:4]}"

@@ -3,10 +3,11 @@ import asyncio
 import logging
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_DEVICES, CONF_VERIFY_SSL
+from homeassistant.const import CONF_DEVICES, CONF_VERIFY_SSL, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from . import hub
-from .const import DOMAIN, STARTUP_MESSAGE
+from .const import DOMAIN, STARTUP_MESSAGE, CONF_BUMPER, CONF_CLIENT_DEVICE_ID
+from .helpers import get_bumper_device_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,7 +56,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
 
 async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
     """Migrate old entry."""
-    _LOGGER.debug("Migrating from version %s", config_entry.version)
+    _LOGGER.debug(f"Migrating from version {config_entry.version}")
 
     if config_entry.version == 1:
         new = {**config_entry.data,
@@ -69,9 +70,17 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
         new[CONF_DEVICES] = devices.get(device_id, [])
 
         config_entry.data = {**new}
-
         config_entry.version = 2
 
-    _LOGGER.info("Migration to version %s successful", config_entry.version)
+    if config_entry.version == 2:
+        new = {**config_entry.data}
+
+        if new.get(CONF_USERNAME) == CONF_BUMPER:
+            new[CONF_CLIENT_DEVICE_ID] = get_bumper_device_id(hass)
+
+        config_entry.data = {**new}
+        config_entry.version = 3
+
+    _LOGGER.info(f"Migration to version {config_entry.version} successful")
 
     return True
