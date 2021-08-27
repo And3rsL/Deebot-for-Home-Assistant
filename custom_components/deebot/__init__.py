@@ -6,6 +6,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_DEVICES, CONF_VERIFY_SSL, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from . import hub
+from .haVersion import is_supported
 from .const import DOMAIN, STARTUP_MESSAGE, CONF_BUMPER, CONF_CLIENT_DEVICE_ID
 from .helpers import get_bumper_device_id
 
@@ -20,6 +21,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if DOMAIN not in hass.data:
         # Print startup message
         _LOGGER.info(STARTUP_MESSAGE)
+
+    if not is_supported():
+        return False
 
     # Store an instance of the "connecting" class that does the work of speaking
     # with your actual devices.

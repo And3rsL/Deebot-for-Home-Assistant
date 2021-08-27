@@ -6,14 +6,32 @@ from deebotozmo.constants import COMPONENT_MAIN_BRUSH, COMPONENT_SIDE_BRUSH, COM
 from deebotozmo.events import CleanLogEvent, WaterInfoEvent, LifeSpanEvent, StatsEvent, EventListener, ErrorEvent, \
     StatusEvent
 from deebotozmo.vacuum_bot import VacuumBot
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import STATE_UNKNOWN, CONF_DESCRIPTION
-from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.typing import StateType
 
+from .haVersion import is_2021_9_or_later
 from .const import DOMAIN, LAST_ERROR
 from .helpers import get_device_info
 from .hub import DeebotHub
 
 _LOGGER = logging.getLogger(__name__)
+
+_USES_NATIVE: bool = is_2021_9_or_later()
+
+
+def _set_state(sensor: SensorEntity, state: Optional[StateType]):
+    if _USES_NATIVE:
+        sensor._attr_native_value = state
+    else:
+        sensor._attr_state = state
+
+
+def _set_unit_of_measurement(sensor: SensorEntity, unit: str):
+    if _USES_NATIVE:
+        sensor._attr_native_unit_of_measurement = unit
+    else:
+        sensor._attr_unit_of_measurement = unit
 
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
@@ -43,7 +61,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
         async_add_devices(new_devices)
 
 
-class DeebotBaseSensor(Entity):
+class DeebotBaseSensor(SensorEntity):
     """Deebot base sensor"""
 
     _attr_should_poll = False
@@ -72,7 +90,7 @@ class DeebotBaseSensor(Entity):
 
         async def on_event(event: StatusEvent):
             if not event.available:
-                self._attr_state = STATE_UNKNOWN
+                _set_state(self, STATE_UNKNOWN)
                 self.async_write_ha_state()
 
         listener: EventListener = self._vacuum_bot.statusEvents.subscribe(on_event)
@@ -94,9 +112,9 @@ class DeebotLastCleanImageSensor(DeebotBaseSensor):
 
         async def on_event(event: CleanLogEvent):
             if event.logs:
-                self._attr_state = event.logs[0].imageUrl
+                _set_state(self, event.logs[0].imageUrl)
             else:
-                self._attr_state = STATE_UNKNOWN
+                _set_state(self, STATE_UNKNOWN)
             self.async_write_ha_state()
 
         listener: EventListener = self._vacuum_bot.cleanLogsEvents.subscribe(on_event)
@@ -118,7 +136,7 @@ class DeebotWaterLevelSensor(DeebotBaseSensor):
 
         async def on_event(event: WaterInfoEvent):
             if event.amount:
-                self._attr_state = event.amount
+                _set_state(self, event.amount)
                 self.async_write_ha_state()
 
         listener: EventListener = self._vacuum_bot.waterEvents.subscribe(on_event)
@@ -128,13 +146,12 @@ class DeebotWaterLevelSensor(DeebotBaseSensor):
 class DeebotComponentSensor(DeebotBaseSensor):
     """Deebot Sensor"""
 
-    _attr_unit_of_measurement = "%"
-
     def __init__(self, vacuum_bot: VacuumBot, device_id: str):
         """Initialize the Sensor."""
         super(DeebotComponentSensor, self).__init__(vacuum_bot, device_id)
         self._attr_icon = "mdi:air-filter" if device_id == COMPONENT_FILTER else "mdi:broom"
         self._id = device_id
+        _set_unit_of_measurement(self, "%")
 
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
@@ -142,7 +159,7 @@ class DeebotComponentSensor(DeebotBaseSensor):
 
         async def on_event(event: LifeSpanEvent):
             if self._id == event.type:
-                self._attr_state = event.percent
+                _set_state(self, event.percent)
                 self.async_write_ha_state()
 
         listener: EventListener = self._vacuum_bot.lifespanEvents.subscribe(on_event)
@@ -159,10 +176,10 @@ class DeebotStatsSensor(DeebotBaseSensor):
         self._type = type
         if type == "area":
             self._attr_icon = "mdi:floor-plan"
-            self._attr_unit_of_measurement = "mq"
+            _set_unit_of_measurement(self, "mq")
         elif type == "time":
             self._attr_icon = "mdi:timer-outline"
-            self._attr_unit_of_measurement = "min"
+            _set_unit_of_measurement(self, "min")
         elif type == "type":
             self._attr_icon = "mdi:cog"
 
@@ -178,9 +195,9 @@ class DeebotStatsSensor(DeebotBaseSensor):
                     return
 
                 if self._type == "time":
-                    self._attr_state = round(value / 60)
+                    _set_state(self, round(value / 60))
                 else:
-                    self._attr_state = value
+                    _set_state(self, value)
 
                 self.async_write_ha_state()
 
@@ -202,7 +219,7 @@ class DeebotLastErrorSensor(DeebotBaseSensor):
         await super().async_added_to_hass()
 
         async def on_event(event: ErrorEvent):
-            self._attr_state = event.code
+            _set_state(self, event.code)
             self._attr_extra_state_attributes = {
                 CONF_DESCRIPTION: event.description
             }
