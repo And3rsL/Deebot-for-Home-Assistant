@@ -2,16 +2,27 @@
 import asyncio
 import logging
 
+from awesomeversion import AwesomeVersion
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_DEVICES, CONF_VERIFY_SSL, CONF_USERNAME
+from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
+
 from . import hub
-from .const import DOMAIN, STARTUP_MESSAGE, CONF_BUMPER, CONF_CLIENT_DEVICE_ID
+from .const import DOMAIN, STARTUP_MESSAGE, CONF_BUMPER, CONF_CLIENT_DEVICE_ID, MIN_REQUIRED_HA_VERSION
 from .helpers import get_bumper_device_id
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = ["sensor", "binary_sensor", "vacuum", "camera"]
+
+
+def is_ha_supported() -> bool:
+    if AwesomeVersion(HA_VERSION) >= MIN_REQUIRED_HA_VERSION:
+        return True
+
+    _LOGGER.error(f"Unsupported HA version! Please upgrade home assistant at least to \"{MIN_REQUIRED_HA_VERSION}\"")
+    return False
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -20,6 +31,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if DOMAIN not in hass.data:
         # Print startup message
         _LOGGER.info(STARTUP_MESSAGE)
+
+    if not is_ha_supported():
+        return False
 
     # Store an instance of the "connecting" class that does the work of speaking
     # with your actual devices.

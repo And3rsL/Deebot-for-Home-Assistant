@@ -50,9 +50,11 @@ class DeeboLiveCamera(Camera):
     def device_info(self) -> Optional[Dict[str, Any]]:
         return get_device_info(self._vacuum_bot)
 
-    async def async_camera_image(self):
-        """Return a still image response from the camera."""
-        return base64.decodebytes(self._vacuum_bot.map.get_base64_map())
+    async def async_camera_image(self, width: Optional[int] = None, height: Optional[int] = None) -> Optional[bytes]:
+        """Return a still image response from the camera.
+        Integrations may choose to ignore the height parameter in order to preserve aspect ratio"""
+
+        return base64.decodebytes(self._vacuum_bot.map.get_base64_map(width))
 
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""

@@ -6,8 +6,8 @@ from deebotozmo.constants import COMPONENT_MAIN_BRUSH, COMPONENT_SIDE_BRUSH, COM
 from deebotozmo.events import CleanLogEvent, WaterInfoEvent, LifeSpanEvent, StatsEvent, EventListener, ErrorEvent, \
     StatusEvent
 from deebotozmo.vacuum_bot import VacuumBot
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import STATE_UNKNOWN, CONF_DESCRIPTION
-from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN, LAST_ERROR
 from .helpers import get_device_info
@@ -43,7 +43,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
         async_add_devices(new_devices)
 
 
-class DeebotBaseSensor(Entity):
+class DeebotBaseSensor(SensorEntity):
     """Deebot base sensor"""
 
     _attr_should_poll = False
@@ -72,7 +72,7 @@ class DeebotBaseSensor(Entity):
 
         async def on_event(event: StatusEvent):
             if not event.available:
-                self._attr_state = STATE_UNKNOWN
+                self._attr_native_value = STATE_UNKNOWN
                 self.async_write_ha_state()
 
         listener: EventListener = self._vacuum_bot.statusEvents.subscribe(on_event)
@@ -94,9 +94,9 @@ class DeebotLastCleanImageSensor(DeebotBaseSensor):
 
         async def on_event(event: CleanLogEvent):
             if event.logs:
-                self._attr_state = event.logs[0].imageUrl
+                self._attr_native_value = event.logs[0].imageUrl
             else:
-                self._attr_state = STATE_UNKNOWN
+                self._attr_native_value = STATE_UNKNOWN
             self.async_write_ha_state()
 
         listener: EventListener = self._vacuum_bot.cleanLogsEvents.subscribe(on_event)
@@ -118,7 +118,7 @@ class DeebotWaterLevelSensor(DeebotBaseSensor):
 
         async def on_event(event: WaterInfoEvent):
             if event.amount:
-                self._attr_state = event.amount
+                self._attr_native_value = event.amount
                 self.async_write_ha_state()
 
         listener: EventListener = self._vacuum_bot.waterEvents.subscribe(on_event)
@@ -128,7 +128,7 @@ class DeebotWaterLevelSensor(DeebotBaseSensor):
 class DeebotComponentSensor(DeebotBaseSensor):
     """Deebot Sensor"""
 
-    _attr_unit_of_measurement = "%"
+    _attr_native_unit_of_measurement = "%"
 
     def __init__(self, vacuum_bot: VacuumBot, device_id: str):
         """Initialize the Sensor."""
@@ -142,7 +142,7 @@ class DeebotComponentSensor(DeebotBaseSensor):
 
         async def on_event(event: LifeSpanEvent):
             if self._id == event.type:
-                self._attr_state = event.percent
+                self._attr_native_value = event.percent
                 self.async_write_ha_state()
 
         listener: EventListener = self._vacuum_bot.lifespanEvents.subscribe(on_event)
@@ -159,10 +159,10 @@ class DeebotStatsSensor(DeebotBaseSensor):
         self._type = type
         if type == "area":
             self._attr_icon = "mdi:floor-plan"
-            self._attr_unit_of_measurement = "mq"
+            self._attr_native_unit_of_measurement = "mq"
         elif type == "time":
             self._attr_icon = "mdi:timer-outline"
-            self._attr_unit_of_measurement = "min"
+            self._attr_native_unit_of_measurement = "min"
         elif type == "type":
             self._attr_icon = "mdi:cog"
 
@@ -178,9 +178,9 @@ class DeebotStatsSensor(DeebotBaseSensor):
                     return
 
                 if self._type == "time":
-                    self._attr_state = round(value / 60)
+                    self._attr_native_value = round(value / 60)
                 else:
-                    self._attr_state = value
+                    self._attr_native_value = value
 
                 self.async_write_ha_state()
 
@@ -202,7 +202,7 @@ class DeebotLastErrorSensor(DeebotBaseSensor):
         await super().async_added_to_hass()
 
         async def on_event(event: ErrorEvent):
-            self._attr_state = event.code
+            self._attr_native_value = event.code
             self._attr_extra_state_attributes = {
                 CONF_DESCRIPTION: event.description
             }
