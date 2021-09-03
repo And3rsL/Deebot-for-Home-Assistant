@@ -241,7 +241,7 @@ class DeebotVacuum(StateVacuumEntity):
         else:
             await self._device.execute_command(Command(command, params))
 
-    def _service_refresh(self, part: str) -> None:
+    async def _service_refresh(self, part: str) -> None:
         """Service to manually refresh"""
         _LOGGER.debug(f"Manually refresh {part}")
         if part == EVENT_STATUS:
