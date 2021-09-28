@@ -1,0 +1,51 @@
+name-template: '$RESOLVED_VERSION'
+tag-template: '$RESOLVED_VERSION'
+change-template: '- #$NUMBER $TITLE @$AUTHOR'
+sort-direction: ascending
+prerelease: true
+categories:
+  - title: ':boom: Breaking changes'
+    label: 'Breaking Change'
+
+  - title: ':sparkles: New features'
+    label: 'pr: new-feature'
+
+  - title: ':zap: Enhancements'
+    label: 'pr: enhancement'
+
+  - title: ':recycle: Refactor'
+    label: 'pr: refactor'
+
+  - title: ':bug: Bug Fixes'
+    label: 'pr: bugfix'
+
+  - title: ':arrow_up: Dependency Updates'
+    labels:
+      - 'pr: dependency-update'
+      - 'dependencies'
+
+include-labels:
+  - 'Breaking Change'
+  - 'pr: enhancement'
+  - 'pr: dependency-update'
+  - 'pr: new-feature'
+  - 'pr: bugfix'
+  - 'pr: refactor'
+
+version-resolver:
+  major:
+    labels:
+      - 'Breaking Change'
+  minor:
+    labels:
+      - 'pr: enhancement'
+      - 'pr: dependency-update'
+      - 'pr: new-feature'
+  patch:
+    labels:
+      - 'pr: bugfix'
+  default: minor
+
+template: |
+  [![Downloads for this release](https://img.shields.io/github/downloads/And3rsL/Deebotozmo/$RESOLVED_VERSION/total.svg)](https://github.com/And3rsL/Deebotozmo/releases/$RESOLVED_VERSION)
+  $CHANGES
