@@ -150,7 +150,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore
                     return self.async_create_entry(
                         title=self._data[CONF_USERNAME], data=self._data
                     )
-            except Exception as ex:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 _LOGGER.error("Unexpected exception", exc_info=True)
                 errors["base"] = "unknown"
 

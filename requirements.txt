@@ -1,2 +1,2 @@
 deebotozmo==2.1.2
-homeassistant
+homeassistant==2021.9.7
