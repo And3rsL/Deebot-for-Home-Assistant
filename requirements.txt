@@ -1,6 +1,8 @@
-deebotozmo==2.1.2
+git+https://github.com/And3rsL/Deebotozmo.git@code-quality#deebotozmo==2.1.3
 homeassistant==2021.9.7
-pytest-homeassistant-custom-component==0.4.4
+
+# Test requirements
+#pytest-homeassistant-custom-component==0.4.4
 black==21.9b0
 flake8==3.9.2
 isort==5.9.3
