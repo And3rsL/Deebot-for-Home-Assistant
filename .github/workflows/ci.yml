@@ -41,7 +41,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install -r requirements_test.txt
       - name: Run pre-commit checks
         run: |
           pre-commit run --hook-stage manual --all-files --show-diff-on-failure
