@@ -13,8 +13,8 @@ body:
       label: Is there an existing issue for this?
       description: Please search to see if an issue already exists for your feature request or idea
       options:
-      - label: I have searched the existing issues and no issue is describing my feature request or idea
-        required: true
+        - label: I have searched the existing issues and no issue is describing my feature request or idea
+          required: true
 
   - type: textarea
     attributes:

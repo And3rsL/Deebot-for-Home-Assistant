@@ -1,49 +1,49 @@
-name-template: '$RESOLVED_VERSION'
-tag-template: '$RESOLVED_VERSION'
-change-template: '- #$NUMBER $TITLE @$AUTHOR'
+name-template: "$RESOLVED_VERSION"
+tag-template: "$RESOLVED_VERSION"
+change-template: "- #$NUMBER $TITLE @$AUTHOR"
 sort-direction: ascending
 prerelease: true
 categories:
-  - title: ':boom: Breaking changes'
-    label: 'Breaking Change'
+  - title: ":boom: Breaking changes"
+    label: "Breaking Change"
 
-  - title: ':sparkles: New features'
-    label: 'pr: new-feature'
+  - title: ":sparkles: New features"
+    label: "pr: new-feature"
 
-  - title: ':zap: Enhancements'
-    label: 'pr: enhancement'
+  - title: ":zap: Enhancements"
+    label: "pr: enhancement"
 
-  - title: ':recycle: Refactor'
-    label: 'pr: refactor'
+  - title: ":recycle: Refactor"
+    label: "pr: refactor"
 
-  - title: ':bug: Bug Fixes'
-    label: 'pr: bugfix'
+  - title: ":bug: Bug Fixes"
+    label: "pr: bugfix"
 
-  - title: ':arrow_up: Dependency Updates'
+  - title: ":arrow_up: Dependency Updates"
     labels:
-      - 'pr: dependency-update'
-      - 'dependencies'
+      - "pr: dependency-update"
+      - "dependencies"
 
 include-labels:
-  - 'Breaking Change'
-  - 'pr: enhancement'
-  - 'pr: dependency-update'
-  - 'pr: new-feature'
-  - 'pr: bugfix'
-  - 'pr: refactor'
+  - "Breaking Change"
+  - "pr: enhancement"
+  - "pr: dependency-update"
+  - "pr: new-feature"
+  - "pr: bugfix"
+  - "pr: refactor"
 
 version-resolver:
   major:
     labels:
-      - 'Breaking Change'
+      - "Breaking Change"
   minor:
     labels:
-      - 'pr: enhancement'
-      - 'pr: dependency-update'
-      - 'pr: new-feature'
+      - "pr: enhancement"
+      - "pr: dependency-update"
+      - "pr: new-feature"
   patch:
     labels:
-      - 'pr: bugfix'
+      - "pr: bugfix"
   default: minor
 
 template: |

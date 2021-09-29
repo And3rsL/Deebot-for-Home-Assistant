@@ -39,7 +39,7 @@ To add your Ecovacs devices into your Home Assistant installation, follow the st
 
 ### Chinese server Configuration
 
-For chinese server username you require "short id" and password. short id look like "EXXXXXX". DO NOT USE YOUR MOBILE PHONE NUMBER, it wont work.
+For chinese server username you require "short id" and password. short id look like "EXXXXXX". DO NOT USE YOUR MOBILE PHONE NUMBER, it won't work.
 
 country: cn
 continent: as (or ww)
@@ -100,7 +100,7 @@ Example for fan_speed:
 {{ states.vacuum.YOUR_ROBOT_NAME.attributes['fan_speed'] }}
 ```
 
-Get room numbers dynamically, very helpfull if your robot is multi-floor or if your robot lose the map and you don't want to change automations every time:
+Get room numbers dynamically, very helpful if your robot is multi-floor or if your robot lose the map and you don't want to change automations every time:
 
 ```
 {{ states.vacuum.YOURROBOTNAME.attributes.room_bathroom }}

@@ -13,8 +13,8 @@ body:
       label: Is there an existing issue for this?
       description: Please search to see if an issue already exists for the bug you encountered.
       options:
-      - label: I have searched the existing issues and no issue is describing my issue
-        required: true
+        - label: I have searched the existing issues and no issue is describing my issue
+          required: true
 
   - type: textarea
     validations:
