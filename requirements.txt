@@ -1,4 +1,4 @@
-git+https://github.com/And3rsL/Deebotozmo.git@code-quality#deebotozmo==2.1.3
+deebotozmo==3.0.0b1
 homeassistant==2021.9.7
 
 # Test requirements

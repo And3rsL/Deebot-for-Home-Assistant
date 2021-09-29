@@ -92,7 +92,7 @@ class DeebotHub:
             _LOGGER.debug("Hub setup complete")
         except Exception as ex:
             msg = "Error during setup"
-            _LOGGER.error(msg, ex, exc_info=True)
+            _LOGGER.error(msg, exc_info=True)
             raise ConfigEntryNotReady(msg) from ex
 
     def disconnect(self) -> None:
