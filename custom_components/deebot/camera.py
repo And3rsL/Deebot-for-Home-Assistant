@@ -60,7 +60,7 @@ class DeeboLiveCamera(Camera):  # type: ignore
         return get_device_info(self._vacuum_bot)
 
     async def async_camera_image(
-        self, width: Optional[int] = None, height: Optional[int] = None
+        self, width: Optional[int] = None, _: Optional[int] = None
     ) -> Optional[bytes]:
         """Return a still image response from the camera.
 

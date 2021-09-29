@@ -84,16 +84,16 @@ class DeebotHub:
                     )
 
                     await self._mqtt.subscribe(vacbot)
-                    _LOGGER.debug("New vacbot found: " + device["name"])
+                    _LOGGER.debug("New vacbot found: %s", device["name"])
                     self.vacuum_bots.append(vacbot)
 
             asyncio.create_task(self._check_status_task())
 
             _LOGGER.debug("Hub setup complete")
-        except Exception as e:
+        except Exception as ex:
             msg = "Error during setup"
-            _LOGGER.error(msg, e, exc_info=True)
-            raise ConfigEntryNotReady(msg) from e
+            _LOGGER.error(msg, ex, exc_info=True)
+            raise ConfigEntryNotReady(msg) from ex
 
     def disconnect(self) -> None:
         """Disconnect hub."""
@@ -110,12 +110,13 @@ class DeebotHub:
             try:
                 await asyncio.sleep(60)
                 await self._check_status_function()
-            except ClientError as e:
+            except ClientError as ex:
                 _LOGGER.warning(
-                    f"A client error occurred, probably the ecovacs servers are unstable: {e}"
+                    "A client error occurred, probably the ecovacs servers are unstable: %s",
+                    ex,
                 )
-            except Exception as e:
-                _LOGGER.error(f"Unknown exception occurred: {e}")
+            except Exception as ex:  # pylint: disable=broad-except
+                _LOGGER.error(ex, exc_info=True)
 
     async def _check_status_function(self) -> None:
         devices = await self._ecovacs_api.get_devices()
@@ -123,4 +124,4 @@ class DeebotHub:
             bot: VacuumBot
             for bot in self.vacuum_bots:
                 if device.did == bot.vacuum.did:
-                    bot.set_available(True if device.status == 1 else False)
+                    bot.set_available(device.status == 1)

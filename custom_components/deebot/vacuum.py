@@ -285,7 +285,7 @@ class DeebotVacuum(StateVacuumEntity):  # type: ignore
         self, command: str, params: Optional[Dict[str, Any]] = None, **kwargs: Any
     ) -> None:
         """Send a command to a vacuum cleaner."""
-        _LOGGER.debug(f"async_send_command {command} with {params}")
+        _LOGGER.debug("async_send_command %s with %s", command, params)
 
         if command == "relocate":
             await self._device.execute_command(Relocate())
@@ -316,7 +316,7 @@ class DeebotVacuum(StateVacuumEntity):  # type: ignore
 
     async def _service_refresh(self, part: str) -> None:
         """Service to manually refresh."""
-        _LOGGER.debug(f"Manually refresh {part}")
+        _LOGGER.debug("Manually refresh %s", part)
         if part == EVENT_STATUS:
             self._device.events.status.request_refresh()
         elif part == EVENT_ERROR:
@@ -338,4 +338,4 @@ class DeebotVacuum(StateVacuumEntity):  # type: ignore
         elif part == EVENT_MAP:
             self._device.events.map.request_refresh()
         else:
-            _LOGGER.warning(f'Service "refresh" called with unknown part: {part}')
+            _LOGGER.warning('Service "refresh" called with unknown part: %s', part)

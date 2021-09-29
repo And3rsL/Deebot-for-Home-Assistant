@@ -30,7 +30,8 @@ def is_ha_supported() -> bool:
         return True
 
     _LOGGER.error(
-        f'Unsupported HA version! Please upgrade home assistant at least to "{MIN_REQUIRED_HA_VERSION}"'
+        'Unsupported HA version! Please upgrade home assistant at least to "%s"',
+        MIN_REQUIRED_HA_VERSION,
     )
     return False
 
@@ -80,7 +81,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Migrate old entry."""
-    _LOGGER.debug(f"Migrating from version {config_entry.version}")
+    _LOGGER.debug("Migrating from version %d", config_entry.version)
 
     if config_entry.version == 1:
         new: Dict[str, Any] = {**config_entry.data, CONF_VERIFY_SSL: True}
@@ -104,6 +105,6 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
         config_entry.data = {**new}
         config_entry.version = 3
 
-    _LOGGER.info(f"Migration to version {config_entry.version} successful")
+    _LOGGER.info("Migration to version %d successful", config_entry.version)
 
     return True

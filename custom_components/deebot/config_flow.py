@@ -89,14 +89,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore
             try:
                 info = await self._async_retrieve_bots(user_input)
                 self._robot_list = info
-            except ClientError as e:
-                _LOGGER.debug("Cannot connect", e, exc_info=True)
+            except ClientError:
+                _LOGGER.debug("Cannot connect", exc_info=True)
                 errors["base"] = "cannot_connect"
-            except ValueError as e:
-                _LOGGER.debug("Invalid auth", e, exc_info=True)
+            except ValueError:
+                _LOGGER.debug("Invalid auth", exc_info=True)
                 errors["base"] = "invalid_auth"
-            except Exception as e:
-                _LOGGER.error("Unexpected exception", e, exc_info=True)
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.error("Unexcdepted exception", exc_info=True)
                 errors["base"] = "unknown"
 
             if not errors:
@@ -150,17 +150,19 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore
                     return self.async_create_entry(
                         title=self._data[CONF_USERNAME], data=self._data
                     )
-            except Exception as e:
-                _LOGGER.error("Unexpected exception", e, exc_info=True)
+            except Exception as ex:  # pylint: disable=broad-except
+                _LOGGER.error("Unexpected exception", exc_info=True)
                 errors["base"] = "unknown"
 
         # If there is no user input or there were errors, show the form again, including any errors that were found with the input.
-        robot_listDict = {e["name"]: e.get("nick", e["name"]) for e in self._robot_list}
+        robot_list_dict = {
+            e["name"]: e.get("nick", e["name"]) for e in self._robot_list
+        }
         options_schema = vol.Schema(
             {
                 vol.Required(
-                    CONF_DEVICES, default=list(robot_listDict.keys())
-                ): cv.multi_select(robot_listDict)
+                    CONF_DEVICES, default=list(robot_list_dict.keys())
+                ): cv.multi_select(robot_list_dict)
             }
         )
 

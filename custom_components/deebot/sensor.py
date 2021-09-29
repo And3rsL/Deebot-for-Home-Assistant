@@ -173,18 +173,18 @@ class DeebotComponentSensor(DeebotBaseSensor):
 class DeebotStatsSensor(DeebotBaseSensor):
     """Deebot stats sensor."""
 
-    def __init__(self, vacuum_bot: VacuumBot, type: str):
+    def __init__(self, vacuum_bot: VacuumBot, stats_type: str):
         """Initialize the Sensor."""
 
-        super().__init__(vacuum_bot, f"stats_{type}")
-        self._type = type
-        if type == "area":
+        super().__init__(vacuum_bot, f"stats_{stats_type}")
+        self._type = stats_type
+        if stats_type == "area":
             self._attr_icon = "mdi:floor-plan"
             self._attr_native_unit_of_measurement = "mq"
-        elif type == "time":
+        elif stats_type == "time":
             self._attr_icon = "mdi:timer-outline"
             self._attr_native_unit_of_measurement = "min"
-        elif type == "type":
+        elif stats_type == "type":
             self._attr_icon = "mdi:cog"
 
     async def async_added_to_hass(self) -> None:
