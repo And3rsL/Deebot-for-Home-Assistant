@@ -43,7 +43,7 @@ jobs:
           pip install -r requirements.txt
       - name: Run pre-commit checks
         run: |
-          pre-commit run --hook-stage manual --all-files --show-diff-on-failure
+          SKIP=no-commit-to-branch pre-commit run --hook-stage manual --all-files --show-diff-on-failure
       - name: Pylint review
         run: |
           pylint custom_components

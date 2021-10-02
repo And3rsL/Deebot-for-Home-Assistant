@@ -3,25 +3,17 @@ import logging
 from typing import Any, Dict, List, Mapping, Optional
 
 import voluptuous as vol
-from deebotozmo.commands import (
+from deebotozmo.commands import FanSpeedLevel, SetFanSpeed, SetWaterInfo
+from deebotozmo.commands_old import (
     Charge,
     CleanCustomArea,
     CleanPause,
-    CleanResume,
     CleanSpotArea,
     CleanStart,
     CleanStop,
     Command,
     PlaySound,
     Relocate,
-    SetFanSpeed,
-    SetWaterLevel,
-)
-from deebotozmo.constants import (
-    FAN_SPEED_MAX,
-    FAN_SPEED_MAXPLUS,
-    FAN_SPEED_NORMAL,
-    FAN_SPEED_QUIET,
 )
 from deebotozmo.event_emitter import EventListener
 from deebotozmo.events import (
@@ -220,7 +212,7 @@ class DeebotVacuum(StateVacuumEntity):  # type: ignore
     @property
     def fan_speed_list(self) -> List[str]:
         """Get the list of available fan speed steps of the vacuum cleaner."""
-        return [FAN_SPEED_QUIET, FAN_SPEED_NORMAL, FAN_SPEED_MAX, FAN_SPEED_MAXPLUS]
+        return [level.display_name for level in FanSpeedLevel]
 
     @property
     def extra_state_attributes(self) -> Optional[Mapping[str, Any]]:
@@ -272,10 +264,7 @@ class DeebotVacuum(StateVacuumEntity):  # type: ignore
 
     async def async_start(self) -> None:
         """Start the vacuum cleaner."""
-        if self._device.status.state == VacuumState.STATE_PAUSED:
-            await self._device.execute_command(CleanResume())
-        else:
-            await self._device.execute_command(CleanStart())
+        await self._device.execute_command(CleanStart())
 
     async def async_locate(self, **kwargs: Any) -> None:
         """Locate the vacuum cleaner."""
@@ -310,7 +299,7 @@ class DeebotVacuum(StateVacuumEntity):  # type: ignore
                     )
                 )
             elif command == "set_water":
-                await self._device.execute_command(SetWaterLevel(params["amount"]))
+                await self._device.execute_command(SetWaterInfo(params["amount"]))
         else:
             await self._device.execute_command(Command(command, params))
 

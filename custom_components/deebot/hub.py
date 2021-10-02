@@ -62,12 +62,14 @@ class DeebotHub:
     async def async_setup(self) -> None:
         """Init hub."""
         try:
+            if self._mqtt:
+                self.disconnect()
+
             await self._ecovacs_api.login()
             auth = await self._ecovacs_api.get_request_auth()
 
-            self._mqtt = EcovacsMqtt(
-                auth, continent=self._continent, country=self._country
-            )
+            self._mqtt = EcovacsMqtt(continent=self._continent, country=self._country)
+            await self._mqtt.initialize(auth)
 
             devices = await self._ecovacs_api.get_devices()
 
@@ -99,6 +101,7 @@ class DeebotHub:
         """Disconnect hub."""
         if self._mqtt:
             self._mqtt.disconnect()
+            self._mqtt = None
 
     @property
     def name(self) -> str:
