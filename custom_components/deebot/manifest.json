@@ -5,9 +5,7 @@
   "config_flow": true,
   "documentation": "https://github.com/And3rsL/Deebot-for-Home-Assistant",
   "issue_tracker": "https://github.com/And3rsL/Deebot-for-Home-Assistant/issues",
-  "requirements": [
-    "deebotozmo==3.0.0b3"
-  ],
+  "requirements": ["deebotozmo==3.0.0b3"],
   "codeowners": ["@And3rsL", "@edenhaus"],
   "iot_class": "cloud_polling"
 }
