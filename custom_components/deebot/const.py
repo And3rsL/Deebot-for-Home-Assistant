@@ -1,3 +1,4 @@
+"""Const module."""
 from deebotozmo.models import VacuumState
 from homeassistant.components.vacuum import (
     STATE_CLEANING,
@@ -42,7 +43,7 @@ BUMPER_CONFIGURATION = {
     CONF_COUNTRY: "it",
     CONF_PASSWORD: CONF_BUMPER,
     CONF_USERNAME: CONF_BUMPER,
-    CONF_VERIFY_SSL: False  # required as bumper is using self signed certificates
+    CONF_VERIFY_SSL: False,  # required as bumper is using self signed certificates
 }
 
 DEEBOT_DEVICES = f"{DOMAIN}_devices"

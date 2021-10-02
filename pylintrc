@@ -1,0 +1,49 @@
+[MASTER]
+ignore=tests
+# Use a conservative default here; 2 should speed up most setups and not hurt
+# any too bad. Override on command line as appropriate.
+# Disabled for now: https://github.com/PyCQA/pylint/issues/3584
+#jobs=2
+load-plugins=pylint_strict_informational
+persistent=no
+extension-pkg-whitelist=ciso8601,cv2
+
+[BASIC]
+good-names=i,j,k,ex,_,T,x,y,id
+
+[MESSAGES CONTROL]
+# Reasons disabled:
+# format - handled by black
+# duplicate-code - unavoidable
+# cyclic-import - doesn't test if both import on load
+# too-many-* - are not enforced for the sake of readability
+# abstract-method - with intro of async there are always methods missing
+# inconsistent-return-statements - doesn't handle raise
+# wrong-import-order - isort guards this
+disable=
+  format,
+  abstract-class-little-used,
+  abstract-method,
+  cyclic-import,
+  duplicate-code,
+  inconsistent-return-statements,
+  too-many-instance-attributes,
+  wrong-import-order,
+  too-few-public-methods
+
+# enable useless-suppression temporarily every now and then to clean them up
+enable=
+  use-symbolic-message-instead,
+
+[REPORTS]
+score=no
+
+[TYPECHECK]
+# For attrs
+ignored-classes=_CountingAttr
+
+[FORMAT]
+expected-line-ending-format=LF
+
+[EXCEPTIONS]
+overgeneral-exceptions=BaseException,Exception

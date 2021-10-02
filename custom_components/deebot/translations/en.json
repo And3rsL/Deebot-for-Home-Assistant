@@ -1,33 +1,33 @@
 {
-    "config": {
-        "abort": {
-            "already_configured": "Already configured"
-        },
-        "error": {
-            "cannot_connect": "Can't connect to the ecovacs API",
-            "invalid_auth": "Invalid username or password",
-            "unknown": "Unknown error",
-            "invalid_country":"Country code should be two letter code, ex: us, uk, etc ",
-            "invalid_continent":"Continent code should be two letter code, ex: ww, eu, etc ",
-            "select_robots": "Please select at least 1 robot"
-        },
-        "step": {
-            "user": {
-                "data": {
-                    "password": "Password",
-                    "username": "E-mail or ShortID",
-                    "country": "Country",
-                    "continent": "Continent"
-                }
-            },
-            "robots": {
-                "data": {
-                    "devices": "Devices"
-                }
-            },
-            "user_advanced": {
-                "description": "Please select \"Bumper\" ONLY if you have a working bumper instance already. Otherwise, select \"Cloud\" please."
-            }
+  "config": {
+    "abort": {
+      "already_configured": "Already configured"
+    },
+    "error": {
+      "cannot_connect": "Can't connect to the ecovacs API",
+      "invalid_auth": "Invalid username or password",
+      "unknown": "Unknown error",
+      "invalid_country": "Country code should be two letter code, ex: us, uk, etc ",
+      "invalid_continent": "Continent code should be two letter code, ex: ww, eu, etc ",
+      "select_robots": "Please select at least 1 robot"
+    },
+    "step": {
+      "user": {
+        "data": {
+          "password": "Password",
+          "username": "E-mail or ShortID",
+          "country": "Country",
+          "continent": "Continent"
         }
-   }
+      },
+      "robots": {
+        "data": {
+          "devices": "Devices"
+        }
+      },
+      "user_advanced": {
+        "description": "Please select \"Bumper\" ONLY if you have a working bumper instance already. Otherwise, select \"Cloud\" please."
+      }
+    }
+  }
 }

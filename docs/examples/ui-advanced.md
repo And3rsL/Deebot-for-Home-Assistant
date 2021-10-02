@@ -1,13 +1,14 @@
 # UI advanced example
 
 Main feature is ability to specify via UI the order of the cleaned rooms.
-Thanks to @aidbish for the inital idea.
+Thanks to @aidbish for the initial idea.
 
 ![Preview](../images/ui-advanced.gif)
 
 ## Setup
 
 For this setup to work, you need some custom components (all available via HACS)
+
 - [Variables](https://github.com/Wibias/hass-variables)
 - [Vacuum-card](https://github.com/denysdovhan/vacuum-card)
 - [Button-card](https://github.com/custom-cards/button-card)
@@ -107,7 +108,6 @@ variable:
     value: ""
     restore: false
 
-
 # Room name comes from the integration to match attribute names
 template:
   unique_id: deebot_susi_queue
@@ -168,13 +168,13 @@ cards:
     stats:
       default:
         - entity_id: sensor.susi_brush
-          unit: '%'
+          unit: "%"
           subtitle: Hauptbürste
         - entity_id: sensor.susi_sidebrush
-          unit: '%'
+          unit: "%"
           subtitle: Seitenbürsten
         - entity_id: sensor.susi_heap
-          unit: '%'
+          unit: "%"
           subtitle: Filter
       cleaning:
         - entity_id: sensor.susi_stats_area
@@ -206,7 +206,7 @@ cards:
           - styles:
               card:
                 - background-color: var(--primary-color)
-            operator: '>='
+            operator: ">="
             value: 1
         styles:
           card:
@@ -246,7 +246,7 @@ cards:
           - styles:
               card:
                 - background-color: var(--primary-color)
-            operator: '>='
+            operator: ">="
             value: 1
         styles:
           card:
@@ -286,7 +286,7 @@ cards:
           - styles:
               card:
                 - background-color: var(--primary-color)
-            operator: '>='
+            operator: ">="
             value: 1
         styles:
           card:
@@ -326,7 +326,7 @@ cards:
           - styles:
               card:
                 - background-color: var(--primary-color)
-            operator: '>='
+            operator: ">="
             value: 1
         styles:
           card:
@@ -368,7 +368,7 @@ cards:
           - styles:
               card:
                 - background-color: var(--primary-color)
-            operator: '>='
+            operator: ">="
             value: 1
         styles:
           card:
@@ -408,7 +408,7 @@ cards:
           - styles:
               card:
                 - background-color: var(--primary-color)
-            operator: '>='
+            operator: ">="
             value: 1
         styles:
           card:
@@ -448,7 +448,7 @@ cards:
           - styles:
               card:
                 - background-color: var(--primary-color)
-            operator: '>='
+            operator: ">="
             value: 1
         styles:
           card:

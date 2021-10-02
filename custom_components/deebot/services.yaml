@@ -1,4 +1,5 @@
-refresh: # Must be kept in sync with vacuum.py
+# Must be kept in sync with vacuum.py
+refresh:
   name: Manually refresh
   description: Manually request a refresh
   target:

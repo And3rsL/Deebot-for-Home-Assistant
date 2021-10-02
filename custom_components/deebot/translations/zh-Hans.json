@@ -1,27 +1,27 @@
 {
-    "config": {
-        "abort": {
-            "already_configured": "已存在现有配置"
-        },
-        "error": {
-            "cannot_connect": "无法连接科沃斯服务器",
-            "invalid_auth": "用户名或密码错误",
-            "unknown": "未知错误",
-            "invalid_country":"请输入正确的国家代码, 例如: us, uk, cn ",
-            "invalid_continent":"请输入正确的地区代码, 例如: ww, eu, as ",
-            "select_robots": "最少需要勾选一个机器人"
-        },
-        "step": {
-            "user": {
-                "data": {
-                    "password": "密码",
-                    "username": "电子邮件地址或科沃斯ID",
-                    "country": "国家",
-                    "continent": "地区",
-                    "live_map": "启用动态地图",
-                    "show_color_rooms": "显示房间的颜色 [BETA]"
-                }
-            }
+  "config": {
+    "abort": {
+      "already_configured": "已存在现有配置"
+    },
+    "error": {
+      "cannot_connect": "无法连接科沃斯服务器",
+      "invalid_auth": "用户名或密码错误",
+      "unknown": "未知错误",
+      "invalid_country": "请输入正确的国家代码, 例如: us, uk, cn ",
+      "invalid_continent": "请输入正确的地区代码, 例如: ww, eu, as ",
+      "select_robots": "最少需要勾选一个机器人"
+    },
+    "step": {
+      "user": {
+        "data": {
+          "password": "密码",
+          "username": "电子邮件地址或科沃斯ID",
+          "country": "国家",
+          "continent": "地区",
+          "live_map": "启用动态地图",
+          "show_color_rooms": "显示房间的颜色 [BETA]"
         }
-   }
+      }
+    }
+  }
 }

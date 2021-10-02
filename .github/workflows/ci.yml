@@ -1,0 +1,49 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request: ~
+
+env:
+  DEFAULT_PYTHON: 3.9
+
+jobs:
+  validate:
+    runs-on: "ubuntu-latest"
+    name: Validate
+    steps:
+      - uses: "actions/checkout@v2"
+
+      - name: HACS validation
+        uses: "hacs/action@main"
+        with:
+          category: "integration"
+          ignore: brands
+
+      - name: Hassfest validation
+        uses: "home-assistant/actions/hassfest@master"
+
+  code-quality:
+    runs-on: "ubuntu-latest"
+    name: Check code quality
+    steps:
+      - uses: "actions/checkout@v2"
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        id: python
+        uses: actions/setup-python@v2.2.2
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      - name: Run pre-commit checks
+        run: |
+          pre-commit run --hook-stage manual --all-files --show-diff-on-failure
+      - name: Pylint review
+        run: |
+          pylint custom_components

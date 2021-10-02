@@ -1,15 +1,22 @@
 """Support for Deebot Vaccums."""
 import asyncio
 import logging
+from typing import Any, Dict
 
 from awesomeversion import AwesomeVersion
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_DEVICES, CONF_VERIFY_SSL, CONF_USERNAME
+from homeassistant.const import CONF_DEVICES, CONF_USERNAME, CONF_VERIFY_SSL
 from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
 
 from . import hub
-from .const import DOMAIN, STARTUP_MESSAGE, CONF_BUMPER, CONF_CLIENT_DEVICE_ID, MIN_REQUIRED_HA_VERSION
+from .const import (
+    CONF_BUMPER,
+    CONF_CLIENT_DEVICE_ID,
+    DOMAIN,
+    MIN_REQUIRED_HA_VERSION,
+    STARTUP_MESSAGE,
+)
 from .helpers import get_bumper_device_id
 
 _LOGGER = logging.getLogger(__name__)
@@ -18,10 +25,14 @@ PLATFORMS = ["sensor", "binary_sensor", "vacuum", "camera"]
 
 
 def is_ha_supported() -> bool:
+    """Return True, if current HA version is supported."""
     if AwesomeVersion(HA_VERSION) >= MIN_REQUIRED_HA_VERSION:
         return True
 
-    _LOGGER.error(f"Unsupported HA version! Please upgrade home assistant at least to \"{MIN_REQUIRED_HA_VERSION}\"")
+    _LOGGER.error(
+        'Unsupported HA version! Please upgrade home assistant at least to "%s"',
+        MIN_REQUIRED_HA_VERSION,
+    )
     return False
 
 
@@ -45,7 +56,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     # This is called when an entry/configured device is to be removed. The class
     # needs to unload itself, and remove callbacks. See the classes for further
@@ -68,13 +79,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     return unload_ok
 
 
-async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
+async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Migrate old entry."""
-    _LOGGER.debug(f"Migrating from version {config_entry.version}")
+    _LOGGER.debug("Migrating from version %d", config_entry.version)
 
     if config_entry.version == 1:
-        new = {**config_entry.data,
-               CONF_VERIFY_SSL: True}
+        new: Dict[str, Any] = {**config_entry.data, CONF_VERIFY_SSL: True}
 
         device_id = "deviceid"
         devices = new.pop(device_id, {})
@@ -95,6 +105,6 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
         config_entry.data = {**new}
         config_entry.version = 3
 
-    _LOGGER.info(f"Migration to version {config_entry.version} successful")
+    _LOGGER.info("Migration to version %d successful", config_entry.version)
 
     return True

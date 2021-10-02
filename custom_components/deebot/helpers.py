@@ -1,4 +1,5 @@
-from typing import Optional, Dict
+"""Helpers module."""
+from typing import Dict, Optional
 
 from deebotozmo.models import Vacuum
 from deebotozmo.vacuum_bot import VacuumBot
@@ -9,6 +10,7 @@ from .const import DOMAIN
 
 
 def get_device_info(vacuum_bot: VacuumBot) -> Optional[Dict]:
+    """Return device info for given vacuum."""
     device: Vacuum = vacuum_bot.vacuum
     identifiers = set()
     if device.did:
@@ -30,8 +32,9 @@ def get_device_info(vacuum_bot: VacuumBot) -> Optional[Dict]:
 
 
 def get_bumper_device_id(hass: HomeAssistant) -> str:
+    """Return bumper device id."""
     try:
-        location_name = hass.config.location_name.strip().replace(' ', '_')
-    except:
+        location_name = hass.config.location_name.strip().replace(" ", "_")
+    except Exception:  # pylint: disable=broad-except
         location_name = ""
     return f"Deebot-4-HA_{location_name}_{uuid.random_uuid_hex()[:4]}"

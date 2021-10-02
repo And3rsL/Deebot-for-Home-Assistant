@@ -1,33 +1,33 @@
 {
-    "config": {
-        "abort": {
-            "already_configured": "Bereits konfiguriert"
-        },
-        "error": {
-            "cannot_connect": "Verbindung fehlgeschlagen",
-            "invalid_auth": "Ung\u00fcltige Authentifizierung",
-            "unknown": "Unerwarteter Fehler",
-            "invalid_country":"Ung\u00fcltiges Land! L\u00e4ndercode sollte aus 2 Zeichen bestehen! Bsp.: de, it, us, ...",
-            "invalid_continent":"Ung\u00fcltiger Kontinent! Code sollte aus 2 Zeichen bestehen! Bsp.: ww, eu, ...",
-            "select_robots": "Bitte w\u00e4hlen Sie mindestens 1 Roboter aus"
-        },
-        "step": {
-            "user": {
-                "data": {
-                    "password": "Passwort",
-                    "username": "E-mail oder ShortID",
-                    "country": "Land",
-                    "continent": "Kontinent"
-                }
-            },
-            "robots": {
-                "data": {
-                    "devices": "Geräte"
-                }
-            },
-            "user_advanced": {
-                "description": "Wählen Sie \"Bumper\" nur, falls Sie eine funktionierende Bumper-Instanz haben. Sonst wählen Sie bitte die empfohlene Variante \"Cloud\"."
-            }
+  "config": {
+    "abort": {
+      "already_configured": "Bereits konfiguriert"
+    },
+    "error": {
+      "cannot_connect": "Verbindung fehlgeschlagen",
+      "invalid_auth": "Ung\u00fcltige Authentifizierung",
+      "unknown": "Unerwarteter Fehler",
+      "invalid_country": "Ung\u00fcltiges Land! L\u00e4ndercode sollte aus 2 Zeichen bestehen! Bsp.: de, it, us, ...",
+      "invalid_continent": "Ung\u00fcltiger Kontinent! Code sollte aus 2 Zeichen bestehen! Bsp.: ww, eu, ...",
+      "select_robots": "Bitte w\u00e4hlen Sie mindestens 1 Roboter aus"
+    },
+    "step": {
+      "user": {
+        "data": {
+          "password": "Passwort",
+          "username": "E-mail oder ShortID",
+          "country": "Land",
+          "continent": "Kontinent"
         }
-   }
+      },
+      "robots": {
+        "data": {
+          "devices": "Geräte"
+        }
+      },
+      "user_advanced": {
+        "description": "Wählen Sie \"Bumper\" nur, falls Sie eine funktionierende Bumper-Instanz haben. Sonst wählen Sie bitte die empfohlene Variante \"Cloud\"."
+      }
+    }
+  }
 }
