@@ -2,15 +2,12 @@
 import logging
 from typing import Any, Dict, Optional
 
-from deebotozmo.constants import (
-    COMPONENT_FILTER,
-    COMPONENT_MAIN_BRUSH,
-    COMPONENT_SIDE_BRUSH,
-)
+from deebotozmo.commands.life_span import LifeSpan
 from deebotozmo.event_emitter import EventListener
 from deebotozmo.events import (
     CleanLogEvent,
     ErrorEvent,
+    LifeSpanEvent,
     StatsEvent,
     StatusEvent,
     WaterInfoEvent,
@@ -45,9 +42,9 @@ async def async_setup_entry(
         new_devices.append(DeebotLastErrorSensor(vacbot))
 
         # Components
-        new_devices.append(DeebotComponentSensor(vacbot, COMPONENT_MAIN_BRUSH))
-        new_devices.append(DeebotComponentSensor(vacbot, COMPONENT_SIDE_BRUSH))
-        new_devices.append(DeebotComponentSensor(vacbot, COMPONENT_FILTER))
+        new_devices.append(DeebotComponentSensor(vacbot, LifeSpan.BRUSH))
+        new_devices.append(DeebotComponentSensor(vacbot, LifeSpan.SIDE_BRUSH))
+        new_devices.append(DeebotComponentSensor(vacbot, LifeSpan.FILTER))
 
         # Stats
         new_devices.append(DeebotStatsSensor(vacbot, "area"))
@@ -148,19 +145,20 @@ class DeebotComponentSensor(DeebotBaseSensor):
 
     _attr_native_unit_of_measurement = "%"
 
-    def __init__(self, vacuum_bot: VacuumBot, device_id: str):
+    def __init__(self, vacuum_bot: VacuumBot, component: LifeSpan):
         """Initialize the Sensor."""
+        device_id = component.value
         super().__init__(vacuum_bot, device_id)
         self._attr_icon = (
-            "mdi:air-filter" if device_id == COMPONENT_FILTER else "mdi:broom"
+            "mdi:air-filter" if component == LifeSpan.FILTER else "mdi:broom"
         )
-        self._id = device_id
+        self._id: str = device_id
 
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
         await super().async_added_to_hass()
 
-        async def on_event(event: Dict[str, float]) -> None:
+        async def on_event(event: LifeSpanEvent) -> None:
             value = event.get(self._id, None)
             if value:
                 self._attr_native_value = value

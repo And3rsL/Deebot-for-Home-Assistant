@@ -3,18 +3,17 @@ import logging
 from typing import Any, Dict, List, Mapping, Optional
 
 import voluptuous as vol
-from deebotozmo.commands import FanSpeedLevel, SetFanSpeed, SetWaterInfo
-from deebotozmo.commands_old import (
+from deebotozmo.commands import (
     Charge,
-    CleanCustomArea,
-    CleanPause,
-    CleanSpotArea,
-    CleanStart,
-    CleanStop,
-    Command,
+    Clean,
+    FanSpeedLevel,
     PlaySound,
-    Relocate,
+    SetFanSpeed,
+    SetRelocationState,
+    SetWaterInfo,
 )
+from deebotozmo.commands.clean import CleanAction, CleanArea, CleanMode
+from deebotozmo.commands.custom import CustomCommand
 from deebotozmo.event_emitter import EventListener
 from deebotozmo.events import (
     BatteryEvent,
@@ -256,15 +255,15 @@ class DeebotVacuum(StateVacuumEntity):  # type: ignore
 
     async def async_stop(self, **kwargs: Any) -> None:
         """Stop the vacuum cleaner."""
-        await self._device.execute_command(CleanStop())
+        await self._device.execute_command(Clean(CleanAction.STOP))
 
     async def async_pause(self) -> None:
         """Pause the vacuum cleaner."""
-        await self._device.execute_command(CleanPause())
+        await self._device.execute_command(Clean(CleanAction.PAUSE))
 
     async def async_start(self) -> None:
         """Start the vacuum cleaner."""
-        await self._device.execute_command(CleanStart())
+        await self._device.execute_command(Clean(CleanAction.START))
 
     async def async_locate(self, **kwargs: Any) -> None:
         """Locate the vacuum cleaner."""
@@ -276,32 +275,37 @@ class DeebotVacuum(StateVacuumEntity):  # type: ignore
         """Send a command to a vacuum cleaner."""
         _LOGGER.debug("async_send_command %s with %s", command, params)
 
-        if command == "relocate":
-            await self._device.execute_command(Relocate())
+        if command in ["relocate", SetRelocationState.name]:
+            await self._device.execute_command(SetRelocationState())
         elif command == "auto_clean":
             clean_type = params.get("type", "auto") if params else "auto"
-            await self._device.execute_command(CleanStart(clean_type))
+            if clean_type == "auto":
+                _LOGGER.warning('DEPRECATED! Please use "vacuum.start" instead.')
+                await self.async_start()
         elif command in ["spot_area", "custom_area", "set_water"]:
             if params is None:
                 raise RuntimeError("Params are required!")
 
-            if command == "spot_area":
+            if command in "spot_area":
                 await self._device.execute_command(
-                    CleanSpotArea(
-                        area=str(params["rooms"]), cleanings=params.get("cleanings", 1)
+                    CleanArea(
+                        mode=CleanMode.SPOT_AREA,
+                        area=str(params["rooms"]),
+                        cleanings=params.get("cleanings", 1),
                     )
                 )
             elif command == "custom_area":
                 await self._device.execute_command(
-                    CleanCustomArea(
-                        map_position=str(params["coordinates"]),
+                    CleanArea(
+                        mode=CleanMode.CUSTOM_AREA,
+                        area=str(params["coordinates"]),
                         cleanings=params.get("cleanings", 1),
                     )
                 )
             elif command == "set_water":
                 await self._device.execute_command(SetWaterInfo(params["amount"]))
         else:
-            await self._device.execute_command(Command(command, params))
+            await self._device.execute_command(CustomCommand(command, params))
 
     async def _service_refresh(self, part: str) -> None:
         """Service to manually refresh."""
