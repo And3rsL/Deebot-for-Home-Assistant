@@ -69,3 +69,5 @@ EVENT_STATS = "Stats"
 EVENT_LIFE_SPAN = "Life spans"
 EVENT_ROOMS = "Rooms"
 EVENT_MAP = "Map"
+
+EVENT_CUSTOM_COMMAND = "deebot_custom_command"

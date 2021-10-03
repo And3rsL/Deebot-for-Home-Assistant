@@ -1,4 +1,5 @@
 """Support for Deebot Vaccums."""
+import dataclasses
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -17,6 +18,7 @@ from deebotozmo.commands.custom import CustomCommand
 from deebotozmo.event_emitter import EventListener
 from deebotozmo.events import (
     BatteryEvent,
+    CustomCommandEvent,
     ErrorEvent,
     FanSpeedEvent,
     RoomsEvent,
@@ -49,6 +51,7 @@ from .const import (
     DOMAIN,
     EVENT_BATTERY,
     EVENT_CLEAN_LOGS,
+    EVENT_CUSTOM_COMMAND,
     EVENT_ERROR,
     EVENT_FAN_SPEED,
     EVENT_LIFE_SPAN,
@@ -178,12 +181,16 @@ class DeebotVacuum(StateVacuumEntity):  # type: ignore
             self._last_error = event
             self.async_write_ha_state()
 
+        async def on_custom_command(event: CustomCommandEvent) -> None:
+            self.hass.bus.fire(EVENT_CUSTOM_COMMAND, dataclasses.asdict(event))
+
         listeners: List[EventListener] = [
             self._device.events.status.subscribe(on_status),
             self._device.events.battery.subscribe(on_battery),
             self._device.events.rooms.subscribe(on_rooms),
             self._device.events.fan_speed.subscribe(on_fan_speed),
             self._device.events.error.subscribe(on_error),
+            self._device.events.custom_command.subscribe(on_custom_command),
         ]
         self.async_on_remove(lambda: _unsubscribe_listeners(listeners))
 
