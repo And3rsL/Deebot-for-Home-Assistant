@@ -49,3 +49,6 @@ version-resolver:
 template: |
   [![Downloads for this release](https://img.shields.io/github/downloads/And3rsL/Deebotozmo/$RESOLVED_VERSION/total.svg)](https://github.com/And3rsL/Deebotozmo/releases/$RESOLVED_VERSION)
   $CHANGES
+
+  **Like my work and want to support me?**
+  <a href="https://www.buymeacoffee.com/edenhaus" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-black.png" width="150px" height="35px" alt="Buy Me A Coffee" style="height: 35px !important;width: 150px !important;" ></a>
