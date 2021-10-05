@@ -3,7 +3,7 @@ import asyncio
 import logging
 import random
 import string
-from typing import Any, List, Mapping, Optional
+from typing import Any, List, Mapping
 
 import aiohttp
 from aiohttp import ClientError
@@ -48,7 +48,10 @@ class DeebotHub:
                 random.choice(string.ascii_uppercase + string.digits) for _ in range(12)
             )
 
-        self._mqtt: Optional[EcovacsMqtt] = None
+        self._mqtt: EcovacsMqtt = EcovacsMqtt(
+            continent=self._continent, country=self._country
+        )
+
         self._ecovacs_api = EcovacsAPI(
             self._session,
             device_id,
@@ -62,12 +65,13 @@ class DeebotHub:
     async def async_setup(self) -> None:
         """Init hub."""
         try:
+            if self._mqtt:
+                self.disconnect()
+
             await self._ecovacs_api.login()
             auth = await self._ecovacs_api.get_request_auth()
 
-            self._mqtt = EcovacsMqtt(
-                auth, continent=self._continent, country=self._country
-            )
+            await self._mqtt.initialize(auth)
 
             devices = await self._ecovacs_api.get_devices()
 
@@ -97,8 +101,7 @@ class DeebotHub:
 
     def disconnect(self) -> None:
         """Disconnect hub."""
-        if self._mqtt:
-            self._mqtt.disconnect()
+        self._mqtt.disconnect()
 
     @property
     def name(self) -> str:

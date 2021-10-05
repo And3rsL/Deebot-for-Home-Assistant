@@ -1,5 +1,5 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
-<br><a href="https://www.buymeacoffee.com/4nd3rs" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-black.png" width="150px" height="35px" alt="Buy Me A Coffee" style="height: 35px !important;width: 150px !important;" ></a>
+<br><a href="https://www.buymeacoffee.com/edenhaus" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-black.png" width="150px" height="35px" alt="Buy Me A Coffee" style="height: 35px !important;width: 150px !important;" ></a>
 
 # Home Assistant Custom Component for Ecovacs vacuum cleaner
 
@@ -88,12 +88,7 @@ This integration expose a number of sensors
 - sensor.ROBOTNAME_stats_type (Clean Type - Auto|Manual|Custom)
 - sensor.ROBOTNAME_water_level (Current set water level, you can get fan speed by vacuum attributes)
 - binary_sensor.ROBOTNAME_mop_attached (On/off is mop is attached)
-
-### Live Map:
-
-If is true live_map it will try to generate a live map camera feed
-
-- camera.ROBOTNAME_liveMap
+- camera.ROBOTNAME_liveMap The live map
 
 ## UI examples
 
@@ -115,55 +110,132 @@ Get room numbers dynamically, very helpful if your robot is multi-floor or if yo
 
 ## Example commands:
 
+```yaml
+# Clean all
+service: vacuum.start
+target:
+  entity_id: vacuum.YOUR_ROBOT_NAME
+```
+
 Relocate Robot (the little GPS icon in the APP)
 
 ```yaml
 # Relocate Robot
-entity_id: vacuum.YOUR_ROBOT_NAME
-command: relocate
+service: vacuum.send_command
+target:
+  entity_id: vacuum.YOUR_ROBOT_NAME
+data:
+  command: relocate
 ```
 
 You can clean certain area by specify it in rooms params, you can find room number under vacuum attributes
 
 ```yaml
 # Clean Area
-entity_id: vacuum.YOUR_ROBOT_NAME
-command: spot_area
-params:
-  rooms: 10,14
-  cleanings: 1
+service: vacuum.send_command
+target:
+  entity_id: vacuum.YOUR_ROBOT_NAME
+data:
+  command: spot_area
+  params:
+    rooms: 10,14
+    cleanings: 1
 ```
 
 ```yaml
 # Customize Clean
-# You can get coordinates with fiddler and the official APP [Advance User]
-entity_id: vacuum.YOUR_ROBOT_NAME
-command: custom_area
-params:
-  coordinates: -1339,-1511,296,-2587
+service: vacuum.send_command
+target:
+  entity_id: vacuum.YOUR_ROBOT_NAME
+data:
+  command: custom_area
+  params:
+    coordinates: -1339,-1511,296,-2587
 ```
+
+Use the app to send the vacuum to a custom area and afterwards search your logs for `Last custom area values (x1,y1,x2,y2):` entries to get the coordinates.
 
 ```yaml
 # Set Water Level
 # Possible amount values: low|medium|high|ultrahigh
-entity_id: vacuum.YOUR_ROBOT_NAME
-command: set_water
-params:
-  amount: ultrahigh
+service: vacuum.send_command
+target:
+  entity_id: vacuum.YOUR_ROBOT_NAME
+data:
+  command: set_water
+  params:
+    amount: ultrahigh
 ```
+
+### Custom commands
+
+It's also possible to send commands, which are not officially supported by this integration yet.
+For that use also the `vacuum.send_command` service and you will get the response as `deebot_custom_command` event.
+
+Example with the command `getAdvancedMode`
 
 ```yaml
-# Clean
-#Possible values: auto
-entity_id: vacuum.YOUR_ROBOT_NAME
-command: auto_clean
-params:
-  type: auto
+service: vacuum.send_command
+target:
+  entity_id: vacuum.YOUR_ROBOT_NAME
+data:
+  command: getAdvancedMode
 ```
 
-### Issues
+When calling the above example you will get the event `deebot_custom_command` similar to:
 
-If you have an issue with this component, please file a GitHub Issue and include your Home Assistant logs in the report. To get full debug output from both the Ecovacs integration and the underlying deebotozmo library, place this in your configuration.yaml file:
+```json
+{
+  "event_type": "deebot_custom_command",
+  "data": {
+    "name": "getAdvancedMode",
+    "response": {
+      "header": {
+        "pri": 1,
+        "tzm": 480,
+        "ts": "1295442034442",
+        "ver": "0.0.1",
+        "fwVer": "1.8.2",
+        "hwVer": "0.1.1"
+      },
+      "body": {
+        "code": 0,
+        "msg": "ok",
+        "data": {
+          "enable": 1
+        }
+      }
+    }
+  },
+  "origin": "LOCAL",
+  "time_fired": "2021-10-05T21:45:40.294958+00:00",
+  "context": {
+    "id": "[REMOVED]",
+    "parent_id": null,
+    "user_id": null
+  }
+}
+```
+
+The interesting part is normally inside `response->body->data`. In the example above it means I have enabled the advanced mode.
+
+## Services
+
+This integration adds the service `deebot.refresh`, which allows to manually refresh some parts of the vacuum.
+In addition to the vacuum entity you must specify part you want to refresh.
+An example call looks like:
+
+```yaml
+service: deebot.refresh
+data:
+  part: Status
+target:
+  entity_id: vacuum.YOUR_ROBOT_NAME
+```
+
+## Issues
+
+If you have an issue with this component, please file a GitHub Issue and include y`ur Home Assistant logs in the report. To get full debug output from both the Ecovacs integration and the underlying deebotozmo library, place this in your configuration.yaml file:
 
 ```yaml
 logger:
@@ -176,6 +248,6 @@ logger:
 YAML
 Warning: doing this will cause your authentication token to visible in your log files. Be sure to remove any tokens and other authentication details from your log before posting them in an issue.
 
-### Misc
+## Misc
 
 An SVG of the Deebot 950 can be found under [images](docs/images/deebot950.svg)

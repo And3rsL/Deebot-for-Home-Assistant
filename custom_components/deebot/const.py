@@ -49,12 +49,12 @@ BUMPER_CONFIGURATION = {
 DEEBOT_DEVICES = f"{DOMAIN}_devices"
 
 VACUUMSTATE_TO_STATE = {
-    VacuumState.STATE_IDLE: STATE_IDLE,
-    VacuumState.STATE_CLEANING: STATE_CLEANING,
-    VacuumState.STATE_RETURNING: STATE_RETURNING,
-    VacuumState.STATE_DOCKED: STATE_DOCKED,
-    VacuumState.STATE_ERROR: STATE_ERROR,
-    VacuumState.STATE_PAUSED: STATE_PAUSED,
+    VacuumState.IDLE: STATE_IDLE,
+    VacuumState.CLEANING: STATE_CLEANING,
+    VacuumState.RETURNING: STATE_RETURNING,
+    VacuumState.DOCKED: STATE_DOCKED,
+    VacuumState.ERROR: STATE_ERROR,
+    VacuumState.PAUSED: STATE_PAUSED,
 }
 
 LAST_ERROR = "last_error"
@@ -69,3 +69,5 @@ EVENT_STATS = "Stats"
 EVENT_LIFE_SPAN = "Life spans"
 EVENT_ROOMS = "Rooms"
 EVENT_MAP = "Map"
+
+EVENT_CUSTOM_COMMAND = "deebot_custom_command"
