@@ -47,7 +47,7 @@ version-resolver:
   default: minor
 
 template: |
-  [![Downloads for this release](https://img.shields.io/github/downloads/And3rsL/Deebotozmo/$RESOLVED_VERSION/total.svg)](https://github.com/And3rsL/Deebotozmo/releases/$RESOLVED_VERSION)
+  [![Downloads for this release](https://img.shields.io/github/downloads/And3rsL/Deebot-for-Home-Assistant/$RESOLVED_VERSION/total.svg)](https://github.com/And3rsL/Deebot-for-Home-Assistant/releases/$RESOLVED_VERSION)
   $CHANGES
 
   **Like my work and want to support me?**
