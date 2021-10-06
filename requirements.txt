@@ -1,4 +1,4 @@
-deebotozmo==3.0.0
+deebotozmo==3.0.1
 homeassistant==2021.9.7
 
 # Test requirements
