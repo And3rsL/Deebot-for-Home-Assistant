@@ -235,7 +235,7 @@ target:
 
 ## Issues
 
-If you have an issue with this component, please file a GitHub Issue and include y`ur Home Assistant logs in the report. To get full debug output from both the Ecovacs integration and the underlying deebotozmo library, place this in your configuration.yaml file:
+If you have an issue with this component, please create a GitHub Issue and include your Home Assistant logs in the report. To get full debug output from both the Ecovacs integration and the underlying deebotozmo library, place this in your configuration.yaml file:
 
 ```yaml
 logger:
@@ -245,8 +245,9 @@ logger:
     deebotozmo: debug
 ```
 
-YAML
-Warning: doing this will cause your authentication token to visible in your log files. Be sure to remove any tokens and other authentication details from your log before posting them in an issue.
+**Warning: Doing this will cause your authentication token to visible in your log files. Be sure to remove any tokens and other authentication details from your log before posting them in an issue.**
+
+More information can be found in the [HA logger documentation](https://www.home-assistant.io/integrations/logger/)
 
 ## Misc
 
