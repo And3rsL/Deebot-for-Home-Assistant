@@ -1,10 +1,10 @@
 deebotozmo==3.0.1
-homeassistant==2021.10.0
+homeassistant~=2021.10.0
 
 # Test requirements
 #pytest-homeassistant-custom-component==0.4.4
 black==21.9b0
-flake8==3.9.2
+flake8==4.0.1
 isort==5.9.3
 mypy==0.910
 pylint==2.11.1
