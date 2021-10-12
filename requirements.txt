@@ -1,5 +1,5 @@
 deebotozmo==3.0.1
-homeassistant~=2021.10.0
+homeassistant~=2021.10.4
 
 # Test requirements
 #pytest-homeassistant-custom-component==0.4.4
