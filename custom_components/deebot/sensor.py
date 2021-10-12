@@ -10,6 +10,7 @@ from deebotozmo.events import (
     LifeSpanEvent,
     StatsEvent,
     StatusEvent,
+    TotalStatsEvent,
     WaterInfoEvent,
 )
 from deebotozmo.vacuum_bot import VacuumBot
@@ -47,11 +48,22 @@ async def async_setup_entry(
         new_devices.append(DeebotComponentSensor(vacbot, LifeSpan.FILTER))
 
         # Stats
-        new_devices.append(DeebotStatsSensor(vacbot, "area"))
-        new_devices.append(DeebotStatsSensor(vacbot, "time"))
-        new_devices.append(DeebotStatsSensor(vacbot, "type"))
+        new_devices.append(DeebotStatsSensor(vacbot, "area", "mdi:floor-plan", "m²"))
+        new_devices.append(
+            DeebotStatsSensor(vacbot, "time", "mdi:timer-outline", "min")
+        )
+        new_devices.append(DeebotStatsSensor(vacbot, "type", "mdi:cog"))
         new_devices.append(DeebotStatsSensor(vacbot, "cid"))
         new_devices.append(DeebotStatsSensor(vacbot, "start"))
+
+        # TotalStats
+        new_devices.append(
+            DeebotTotalStatsSensor(vacbot, "area", "mdi:floor-plan", "m²")
+        )
+        new_devices.append(
+            DeebotTotalStatsSensor(vacbot, "time", "mdi:timer-outline", "min")
+        )
+        new_devices.append(DeebotTotalStatsSensor(vacbot, "cleanings", "mdi:counter"))
 
     if new_devices:
         async_add_entities(new_devices)
@@ -171,19 +183,19 @@ class DeebotComponentSensor(DeebotBaseSensor):
 class DeebotStatsSensor(DeebotBaseSensor):
     """Deebot stats sensor."""
 
-    def __init__(self, vacuum_bot: VacuumBot, stats_type: str):
+    def __init__(
+        self,
+        vacuum_bot: VacuumBot,
+        stats_type: str,
+        icon: Optional[str] = None,
+        unit_of_measurement: Optional[str] = None,
+    ):
         """Initialize the Sensor."""
 
         super().__init__(vacuum_bot, f"stats_{stats_type}")
         self._type = stats_type
-        if stats_type == "area":
-            self._attr_icon = "mdi:floor-plan"
-            self._attr_native_unit_of_measurement = "mq"
-        elif stats_type == "time":
-            self._attr_icon = "mdi:timer-outline"
-            self._attr_native_unit_of_measurement = "min"
-        elif stats_type == "type":
-            self._attr_icon = "mdi:cog"
+        self._attr_icon = icon
+        self._attr_native_unit_of_measurement = unit_of_measurement
 
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""
@@ -204,6 +216,47 @@ class DeebotStatsSensor(DeebotBaseSensor):
                 self.async_write_ha_state()
 
         listener: EventListener = self._vacuum_bot.events.stats.subscribe(on_event)
+        self.async_on_remove(listener.unsubscribe)
+
+
+class DeebotTotalStatsSensor(DeebotBaseSensor):
+    """Deebot total stats sensor."""
+
+    def __init__(
+        self,
+        vacuum_bot: VacuumBot,
+        stats_type: str,
+        icon: str,
+        unit_of_measurement: Optional[str] = None,
+    ):
+        """Initialize the Sensor."""
+
+        super().__init__(vacuum_bot, f"stats_total_{stats_type}")
+        self._type = stats_type
+        self._attr_icon = icon
+        self._attr_native_unit_of_measurement = unit_of_measurement
+
+    async def async_added_to_hass(self) -> None:
+        """Set up the event listeners now that hass is ready."""
+        await super().async_added_to_hass()
+
+        async def on_event(event: TotalStatsEvent) -> None:
+            if hasattr(event, self._type):
+                value = getattr(event, self._type)
+
+                if not value:
+                    return
+
+                if self._type == "time":
+                    self._attr_native_value = round(value / 60)
+                else:
+                    self._attr_native_value = value
+
+                self.async_write_ha_state()
+
+        listener: EventListener = self._vacuum_bot.events.total_stats.subscribe(
+            on_event
+        )
         self.async_on_remove(listener.unsubscribe)
 
 
