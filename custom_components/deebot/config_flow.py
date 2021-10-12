@@ -7,8 +7,8 @@ from typing import Any, Dict, List, Optional
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from aiohttp import ClientError
-from deebotozmo.ecovacs_api import EcovacsAPI
-from deebotozmo.models import Vacuum
+from deebotozmo import create_instances
+from deebotozmo.models import Configuration, Vacuum
 from deebotozmo.util import md5
 from homeassistant import config_entries
 from homeassistant.const import (
@@ -61,18 +61,22 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore
         self._mode: Optional[str] = None
 
     async def _async_retrieve_bots(self, domain_config: Dict[str, Any]) -> List[Vacuum]:
-        ecovacs_api = EcovacsAPI(
-            aiohttp_client.async_get_clientsession(self.hass),
+        verify_ssl = domain_config.get(CONF_VERIFY_SSL, True)
+        deebot_config = Configuration(
             DEEBOT_API_DEVICEID,
-            domain_config[CONF_USERNAME],
-            md5(domain_config[CONF_PASSWORD]),
-            continent=domain_config[CONF_CONTINENT],
-            country=domain_config[CONF_COUNTRY],
-            verify_ssl=domain_config.get(CONF_VERIFY_SSL, True),
+            domain_config[CONF_CONTINENT],
+            domain_config[CONF_COUNTRY],
+            aiohttp_client.async_get_clientsession(self.hass, verify_ssl=verify_ssl),
+            verify_ssl,
         )
 
-        await ecovacs_api.login()
-        return await ecovacs_api.get_devices()
+        (_, api_client) = create_instances(
+            deebot_config,
+            domain_config[CONF_USERNAME],
+            md5(domain_config[CONF_PASSWORD]),
+        )
+
+        return await api_client.get_devices()
 
     async def async_step_user(
         self, user_input: Optional[Dict[str, Any]] = None
