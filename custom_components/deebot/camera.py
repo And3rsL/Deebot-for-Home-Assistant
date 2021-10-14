@@ -45,14 +45,14 @@ class DeeboLiveCamera(Camera):  # type: ignore
         super().__init__()
         self._vacuum_bot: VacuumBot = vacuum_bot
 
-        if self._vacuum_bot.vacuum.nick is not None:
-            name: str = self._vacuum_bot.vacuum.nick
+        if self._vacuum_bot.device_info.nick is not None:
+            name: str = self._vacuum_bot.device_info.nick
         else:
             # In case there is no nickname defined, use the device id
-            name = self._vacuum_bot.vacuum.did
+            name = self._vacuum_bot.device_info.did
 
         self._attr_name = f"{name}_{device_id}"
-        self._attr_unique_id = f"{self._vacuum_bot.vacuum.did}_{device_id}"
+        self._attr_unique_id = f"{self._vacuum_bot.device_info.did}_{device_id}"
 
     @property
     def device_info(self) -> Optional[Dict[str, Any]]:

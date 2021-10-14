@@ -141,11 +141,11 @@ class DeebotVacuum(StateVacuumEntity):  # type: ignore
         self._hass: HomeAssistant = hass
         self._device: VacuumBot = vacuum_bot
 
-        if self._device.vacuum.nick is not None:
-            name: str = self._device.vacuum.nick
+        if self._device.device_info.nick is not None:
+            name: str = self._device.device_info.nick
         else:
             # In case there is no nickname defined, use the device id
-            name = self._device.vacuum.did
+            name = self._device.device_info.did
 
         self._battery: Optional[int] = None
         self._fan_speed: Optional[str] = None
@@ -154,7 +154,7 @@ class DeebotVacuum(StateVacuumEntity):  # type: ignore
         self._last_error: Optional[ErrorEvent] = None
 
         self._attr_name = name
-        self._attr_unique_id = self._device.vacuum.did
+        self._attr_unique_id = self._device.device_info.did
 
     async def async_added_to_hass(self) -> None:
         """Set up the event listeners now that hass is ready."""

@@ -47,11 +47,11 @@ class DeebotHub:
             )
 
         deebot_config = Configuration(
-            device_id,
-            config.get(CONF_COUNTRY, "it").lower(),
-            config.get(CONF_CONTINENT, "eu").lower(),
             aiohttp_client.async_get_clientsession(self._hass, verify_ssl=verify_ssl),
-            config.get(CONF_VERIFY_SSL, True),
+            device_id=device_id,
+            country=config.get(CONF_COUNTRY, "it").lower(),
+            continent=config.get(CONF_CONTINENT, "eu").lower(),
+            verify_ssl=config.get(CONF_VERIFY_SSL, True),
         )
 
         (authenticator, self._api_client) = create_instances(
@@ -116,5 +116,5 @@ class DeebotHub:
         for device in devices:
             bot: VacuumBot
             for bot in self.vacuum_bots:
-                if device.did == bot.vacuum.did:
+                if device.did == bot.device_info.did:
                     bot.set_available(device.status == 1)
