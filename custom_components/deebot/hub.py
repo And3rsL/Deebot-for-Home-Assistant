@@ -7,8 +7,8 @@ from typing import Any, List, Mapping
 
 import aiohttp
 from aiohttp import ClientError
-from deebotozmo.ecovacs_api import EcovacsAPI
-from deebotozmo.ecovacs_mqtt import EcovacsMqtt
+from deebotozmo import Configuration, create_instances
+from deebotozmo.mqtt_client import MqttClient
 from deebotozmo.util import md5
 from deebotozmo.vacuum_bot import VacuumBot
 from homeassistant.const import (
@@ -30,14 +30,12 @@ class DeebotHub:
     """Deebot Hub."""
 
     def __init__(self, hass: HomeAssistant, config: Mapping[str, Any]):
-        self._config: Mapping[str, Any] = config
+        self._hass_config: Mapping[str, Any] = config
         self._hass: HomeAssistant = hass
-        self._country: str = config.get(CONF_COUNTRY, "it").lower()
-        self._continent: str = config.get(CONF_CONTINENT, "eu").lower()
         self.vacuum_bots: List[VacuumBot] = []
-        self._verify_ssl = config.get(CONF_VERIFY_SSL, True)
+        verify_ssl = config.get(CONF_VERIFY_SSL, True)
         self._session: aiohttp.ClientSession = aiohttp_client.async_get_clientsession(
-            self._hass, verify_ssl=self._verify_ssl
+            self._hass, verify_ssl=verify_ssl
         )
 
         device_id = config.get(CONF_CLIENT_DEVICE_ID)
@@ -48,19 +46,21 @@ class DeebotHub:
                 random.choice(string.ascii_uppercase + string.digits) for _ in range(12)
             )
 
-        self._mqtt: EcovacsMqtt = EcovacsMqtt(
-            continent=self._continent, country=self._country
+        deebot_config = Configuration(
+            aiohttp_client.async_get_clientsession(self._hass, verify_ssl=verify_ssl),
+            device_id=device_id,
+            country=config.get(CONF_COUNTRY, "it").lower(),
+            continent=config.get(CONF_CONTINENT, "eu").lower(),
+            verify_ssl=config.get(CONF_VERIFY_SSL, True),
         )
 
-        self._ecovacs_api = EcovacsAPI(
-            self._session,
-            device_id,
+        (authenticator, self._api_client) = create_instances(
+            deebot_config,
             config.get(CONF_USERNAME, ""),
             md5(config.get(CONF_PASSWORD, "")),
-            continent=self._continent,
-            country=self._country,
-            verify_ssl=self._verify_ssl,
         )
+
+        self._mqtt: MqttClient = MqttClient(deebot_config, authenticator)
 
     async def async_setup(self) -> None:
         """Init hub."""
@@ -68,24 +68,14 @@ class DeebotHub:
             if self._mqtt:
                 self.disconnect()
 
-            await self._ecovacs_api.login()
-            auth = await self._ecovacs_api.get_request_auth()
+            await self._mqtt.initialize()
 
-            await self._mqtt.initialize(auth)
-
-            devices = await self._ecovacs_api.get_devices()
+            devices = await self._api_client.get_devices()
 
             # CREATE VACBOT FOR EACH DEVICE
             for device in devices:
-                if device["name"] in self._config.get(CONF_DEVICES, []):
-                    vacbot = VacuumBot(
-                        self._session,
-                        auth,
-                        device,
-                        continent=self._continent,
-                        country=self._country,
-                        verify_ssl=self._verify_ssl,
-                    )
+                if device["name"] in self._hass_config.get(CONF_DEVICES, []):
+                    vacbot = VacuumBot(self._session, device, self._api_client)
 
                     await self._mqtt.subscribe(vacbot)
                     _LOGGER.debug("New vacbot found: %s", device["name"])
@@ -122,9 +112,9 @@ class DeebotHub:
                 _LOGGER.error(ex, exc_info=True)
 
     async def _check_status_function(self) -> None:
-        devices = await self._ecovacs_api.get_devices()
+        devices = await self._api_client.get_devices()
         for device in devices:
             bot: VacuumBot
             for bot in self.vacuum_bots:
-                if device.did == bot.vacuum.did:
+                if device.did == bot.device_info.did:
                     bot.set_available(device.status == 1)

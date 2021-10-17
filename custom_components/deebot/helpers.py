@@ -1,7 +1,6 @@
 """Helpers module."""
 from typing import Dict, Optional
 
-from deebotozmo.models import Vacuum
 from deebotozmo.vacuum_bot import VacuumBot
 from homeassistant.core import HomeAssistant
 from homeassistant.util import uuid
@@ -11,7 +10,7 @@ from .const import DOMAIN
 
 def get_device_info(vacuum_bot: VacuumBot) -> Optional[Dict]:
     """Return device info for given vacuum."""
-    device: Vacuum = vacuum_bot.vacuum
+    device = vacuum_bot.device_info
     identifiers = set()
     if device.did:
         identifiers.add((DOMAIN, device.did))
