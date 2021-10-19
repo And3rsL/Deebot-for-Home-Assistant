@@ -95,22 +95,6 @@ async def async_setup_entry(
                 "mdi:cog",
             )
         )
-        new_devices.append(
-            GenericSensor(
-                StatsEventDto,
-                vacbot,
-                "stats_cid",
-                lambda e: e.clean_id,
-            )
-        )
-        new_devices.append(
-            GenericSensor(
-                StatsEventDto,
-                vacbot,
-                "stats_start",
-                lambda e: e.start,
-            )
-        )
 
         # TotalStats
         new_devices.append(
