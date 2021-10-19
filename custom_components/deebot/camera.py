@@ -3,8 +3,8 @@ import base64
 import logging
 from typing import Any, Dict, Optional
 
-from deebotozmo.event_emitter import EventListener
-from deebotozmo.events import MapEvent
+from deebotozmo.events import MapEventDto
+from deebotozmo.events.event_bus import EventListener
 from deebotozmo.vacuum_bot import VacuumBot
 from homeassistant.components.camera import Camera
 from homeassistant.config_entries import ConfigEntry
@@ -40,7 +40,7 @@ class DeeboLiveCamera(Camera):  # type: ignore
 
     _attr_entity_registry_enabled_default = False
 
-    def __init__(self, vacuum_bot: VacuumBot, device_id: str):
+    def __init__(self, vacuum_bot: VacuumBot, sensor_name: str):
         """Initialize the camera."""
         super().__init__()
         self._vacuum_bot: VacuumBot = vacuum_bot
@@ -51,8 +51,8 @@ class DeeboLiveCamera(Camera):  # type: ignore
             # In case there is no nickname defined, use the device id
             name = self._vacuum_bot.device_info.did
 
-        self._attr_name = f"{name}_{device_id}"
-        self._attr_unique_id = f"{self._vacuum_bot.device_info.did}_{device_id}"
+        self._attr_name = f"{name}_{sensor_name}"
+        self._attr_unique_id = f"{self._vacuum_bot.device_info.did}_{sensor_name}"
 
     @property
     def device_info(self) -> Optional[Dict[str, Any]]:
@@ -73,8 +73,10 @@ class DeeboLiveCamera(Camera):  # type: ignore
         """Set up the event listeners now that hass is ready."""
         await super().async_added_to_hass()
 
-        async def on_event(_: MapEvent) -> None:
+        async def on_event(_: MapEventDto) -> None:
             self.schedule_update_ha_state()
 
-        listener: EventListener = self._vacuum_bot.events.map.subscribe(on_event)
+        listener: EventListener = self._vacuum_bot.events.subscribe(
+            MapEventDto, on_event
+        )
         self.async_on_remove(listener.unsubscribe)

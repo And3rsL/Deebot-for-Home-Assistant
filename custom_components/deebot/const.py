@@ -1,4 +1,19 @@
 """Const module."""
+from typing import Mapping, Type
+
+from deebotozmo.events import (
+    BatteryEventDto,
+    CleanLogEventDto,
+    ErrorEventDto,
+    EventDto,
+    FanSpeedEventDto,
+    LifeSpanEventDto,
+    MapEventDto,
+    RoomsEventDto,
+    StatsEventDto,
+    StatusEventDto,
+    WaterInfoEventDto,
+)
 from deebotozmo.models import VacuumState
 from homeassistant.components.vacuum import (
     STATE_CLEANING,
@@ -59,15 +74,18 @@ VACUUMSTATE_TO_STATE = {
 
 LAST_ERROR = "last_error"
 
-EVENT_STATUS = "Status"
-EVENT_ERROR = "Error"
-EVENT_FAN_SPEED = "Fan speed"
-EVENT_CLEAN_LOGS = "Clean logs"
-EVENT_WATER = "Water"
-EVENT_BATTERY = "Battery"
-EVENT_STATS = "Stats"
-EVENT_LIFE_SPAN = "Life spans"
-EVENT_ROOMS = "Rooms"
-EVENT_MAP = "Map"
+
+STR_TO_EVENT_DTO: Mapping[str, Type[EventDto]] = {
+    "Battery": BatteryEventDto,
+    "Clean logs": CleanLogEventDto,
+    "Error": ErrorEventDto,
+    "Fan speed": FanSpeedEventDto,
+    "Life spans": LifeSpanEventDto,
+    "Map": MapEventDto,
+    "Rooms": RoomsEventDto,
+    "Stats": StatsEventDto,
+    "Status": StatusEventDto,
+    "Water": WaterInfoEventDto,
+}
 
 EVENT_CUSTOM_COMMAND = "deebot_custom_command"
