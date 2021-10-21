@@ -15,15 +15,15 @@ from deebotozmo.commands import (
 )
 from deebotozmo.commands.clean import CleanAction, CleanArea, CleanMode
 from deebotozmo.commands.custom import CustomCommand
-from deebotozmo.event_emitter import EventListener
 from deebotozmo.events import (
-    BatteryEvent,
-    CustomCommandEvent,
-    ErrorEvent,
-    FanSpeedEvent,
-    RoomsEvent,
-    StatusEvent,
+    BatteryEventDto,
+    CustomCommandEventDto,
+    ErrorEventDto,
+    FanSpeedEventDto,
+    RoomsEventDto,
+    StatusEventDto,
 )
+from deebotozmo.events.event_bus import EventListener
 from deebotozmo.models import Room, VacuumState
 from deebotozmo.vacuum_bot import VacuumBot
 from homeassistant.components.vacuum import (
@@ -49,22 +49,14 @@ from homeassistant.util import slugify
 
 from .const import (
     DOMAIN,
-    EVENT_BATTERY,
-    EVENT_CLEAN_LOGS,
     EVENT_CUSTOM_COMMAND,
-    EVENT_ERROR,
-    EVENT_FAN_SPEED,
-    EVENT_LIFE_SPAN,
-    EVENT_MAP,
-    EVENT_ROOMS,
-    EVENT_STATS,
-    EVENT_STATUS,
-    EVENT_WATER,
     LAST_ERROR,
+    STR_TO_EVENT_DTO,
     VACUUMSTATE_TO_STATE,
 )
 from .helpers import get_device_info
 from .hub import DeebotHub
+from .util import unsubscribe_listeners
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -85,20 +77,7 @@ SUPPORT_DEEBOT: int = (
 SERVICE_REFRESH = "refresh"
 SERVICE_REFRESH_PART = "part"
 SERVICE_REFRESH_SCHEMA = {
-    vol.Required(SERVICE_REFRESH_PART): vol.In(
-        [
-            EVENT_STATUS,
-            EVENT_ERROR,
-            EVENT_FAN_SPEED,
-            EVENT_CLEAN_LOGS,
-            EVENT_WATER,
-            EVENT_BATTERY,
-            EVENT_STATS,
-            EVENT_LIFE_SPAN,
-            EVENT_ROOMS,
-            EVENT_MAP,
-        ]
-    )
+    vol.Required(SERVICE_REFRESH_PART): vol.In(STR_TO_EVENT_DTO.keys())
 }
 
 
@@ -126,11 +105,6 @@ async def async_setup_entry(
     )
 
 
-def _unsubscribe_listeners(listeners: List[EventListener]) -> None:
-    for listener in listeners:
-        listener.unsubscribe()
-
-
 class DeebotVacuum(StateVacuumEntity):  # type: ignore
     """Deebot Vacuum."""
 
@@ -151,7 +125,7 @@ class DeebotVacuum(StateVacuumEntity):  # type: ignore
         self._fan_speed: Optional[str] = None
         self._state: Optional[VacuumState] = None
         self._rooms: List[Room] = []
-        self._last_error: Optional[ErrorEvent] = None
+        self._last_error: Optional[ErrorEventDto] = None
 
         self._attr_name = name
         self._attr_unique_id = self._device.device_info.did
@@ -160,39 +134,39 @@ class DeebotVacuum(StateVacuumEntity):  # type: ignore
         """Set up the event listeners now that hass is ready."""
         await super().async_added_to_hass()
 
-        async def on_battery(event: BatteryEvent) -> None:
+        async def on_battery(event: BatteryEventDto) -> None:
             self._battery = event.value
             self.async_write_ha_state()
 
-        async def on_rooms(event: RoomsEvent) -> None:
-            self._rooms = event.rooms
+        async def on_custom_command(event: CustomCommandEventDto) -> None:
+            self.hass.bus.fire(EVENT_CUSTOM_COMMAND, dataclasses.asdict(event))
+
+        async def on_error(event: ErrorEventDto) -> None:
+            self._last_error = event
             self.async_write_ha_state()
 
-        async def on_fan_speed(event: FanSpeedEvent) -> None:
+        async def on_fan_speed(event: FanSpeedEventDto) -> None:
             self._fan_speed = event.speed
             self.async_write_ha_state()
 
-        async def on_status(event: StatusEvent) -> None:
+        async def on_rooms(event: RoomsEventDto) -> None:
+            self._rooms = event.rooms
+            self.async_write_ha_state()
+
+        async def on_status(event: StatusEventDto) -> None:
             self._attr_available = event.available
             self._state = event.state
             self.async_write_ha_state()
 
-        async def on_error(event: ErrorEvent) -> None:
-            self._last_error = event
-            self.async_write_ha_state()
-
-        async def on_custom_command(event: CustomCommandEvent) -> None:
-            self.hass.bus.fire(EVENT_CUSTOM_COMMAND, dataclasses.asdict(event))
-
         listeners: List[EventListener] = [
-            self._device.events.status.subscribe(on_status),
-            self._device.events.battery.subscribe(on_battery),
-            self._device.events.rooms.subscribe(on_rooms),
-            self._device.events.fan_speed.subscribe(on_fan_speed),
-            self._device.events.error.subscribe(on_error),
-            self._device.events.custom_command.subscribe(on_custom_command),
+            self._device.events.subscribe(BatteryEventDto, on_battery),
+            self._device.events.subscribe(CustomCommandEventDto, on_custom_command),
+            self._device.events.subscribe(ErrorEventDto, on_error),
+            self._device.events.subscribe(FanSpeedEventDto, on_fan_speed),
+            self._device.events.subscribe(RoomsEventDto, on_rooms),
+            self._device.events.subscribe(StatusEventDto, on_status),
         ]
-        self.async_on_remove(lambda: _unsubscribe_listeners(listeners))
+        self.async_on_remove(lambda: unsubscribe_listeners(listeners))
 
     @property
     def supported_features(self) -> int:
@@ -317,25 +291,8 @@ class DeebotVacuum(StateVacuumEntity):  # type: ignore
     async def _service_refresh(self, part: str) -> None:
         """Service to manually refresh."""
         _LOGGER.debug("Manually refresh %s", part)
-        if part == EVENT_STATUS:
-            self._device.events.status.request_refresh()
-        elif part == EVENT_ERROR:
-            self._device.events.error.request_refresh()
-        elif part == EVENT_FAN_SPEED:
-            self._device.events.fan_speed.request_refresh()
-        elif part == EVENT_CLEAN_LOGS:
-            self._device.events.clean_logs.request_refresh()
-        elif part == EVENT_WATER:
-            self._device.events.water_info.request_refresh()
-        elif part == EVENT_BATTERY:
-            self._device.events.battery.request_refresh()
-        elif part == EVENT_STATS:
-            self._device.events.stats.request_refresh()
-        elif part == EVENT_LIFE_SPAN:
-            self._device.events.lifespan.request_refresh()
-        elif part == EVENT_ROOMS:
-            self._device.events.rooms.request_refresh()
-        elif part == EVENT_MAP:
-            self._device.events.map.request_refresh()
+        event = STR_TO_EVENT_DTO.get(part, None)
+        if event:
+            self._device.events.request_refresh(event)
         else:
             _LOGGER.warning('Service "refresh" called with unknown part: %s', part)

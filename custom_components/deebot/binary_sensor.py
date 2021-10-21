@@ -2,8 +2,8 @@
 import logging
 from typing import Any, Dict, Optional
 
-from deebotozmo.event_emitter import EventListener
-from deebotozmo.events import WaterInfoEvent
+from deebotozmo.events import WaterInfoEventDto
+from deebotozmo.events.event_bus import EventListener
 from deebotozmo.vacuum_bot import VacuumBot
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
@@ -39,7 +39,7 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):  # type: ignore
     _attr_should_poll = False
     _attr_entity_registry_enabled_default = False
 
-    def __init__(self, vacuum_bot: VacuumBot, device_id: str):
+    def __init__(self, vacuum_bot: VacuumBot, sensor_name: str):
         """Initialize the Sensor."""
         self._vacuum_bot: VacuumBot = vacuum_bot
 
@@ -49,8 +49,8 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):  # type: ignore
             # In case there is no nickname defined, use the device id
             name = self._vacuum_bot.device_info.did
 
-        self._attr_name = f"{name}_{device_id}"
-        self._attr_unique_id = f"{self._vacuum_bot.device_info.did}_{device_id}"
+        self._attr_name = f"{name}_{sensor_name}"
+        self._attr_unique_id = f"{self._vacuum_bot.device_info.did}_{sensor_name}"
 
     @property
     def icon(self) -> Optional[str]:
@@ -66,9 +66,11 @@ class DeebotMopAttachedBinarySensor(BinarySensorEntity):  # type: ignore
         """Set up the event listeners now that hass is ready."""
         await super().async_added_to_hass()
 
-        async def on_event(event: WaterInfoEvent) -> None:
+        async def on_event(event: WaterInfoEventDto) -> None:
             self._attr_is_on = event.mop_attached
             self.async_write_ha_state()
 
-        listener: EventListener = self._vacuum_bot.events.water_info.subscribe(on_event)
+        listener: EventListener = self._vacuum_bot.events.subscribe(
+            WaterInfoEventDto, on_event
+        )
         self.async_on_remove(listener.unsubscribe)
