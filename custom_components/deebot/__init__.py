@@ -21,7 +21,7 @@ from .helpers import get_bumper_device_id
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["binary_sensor", "camera", "sensor", "select", "vacuum"]
+PLATFORMS = ["binary_sensor", "camera", "select", "sensor", "vacuum"]
 
 
 def is_ha_supported() -> bool:
