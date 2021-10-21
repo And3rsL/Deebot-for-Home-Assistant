@@ -284,6 +284,9 @@ class DeebotVacuum(StateVacuumEntity):  # type: ignore
                     )
                 )
             elif command == "set_water":
+                _LOGGER.warning(
+                    'DEPRECATED! Please use "select.select_option" instead.'
+                )
                 await self._device.execute_command(SetWaterInfo(params["amount"]))
         else:
             await self._device.execute_command(CustomCommand(command, params))

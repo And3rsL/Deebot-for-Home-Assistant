@@ -11,7 +11,6 @@ from deebotozmo.events import (
     StatsEventDto,
     StatusEventDto,
     TotalStatsEventDto,
-    WaterInfoEventDto,
 )
 from deebotozmo.events.event_bus import EventListener
 from deebotozmo.vacuum_bot import VacuumBot
@@ -47,15 +46,6 @@ async def async_setup_entry(
                 "last_clean_image",
                 lambda e: e.logs[0].image_url if e.logs else STATE_UNKNOWN,
                 "mdi:image-search",
-            )
-        )
-        new_devices.append(
-            GenericSensor(
-                WaterInfoEventDto,
-                vacbot,
-                "water_level",
-                lambda e: e.amount,
-                "mdi:water",
             )
         )
         new_devices.append(LastErrorSensor(vacbot))
