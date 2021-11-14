@@ -3,6 +3,9 @@
 
 # Home Assistant Custom Component for Ecovacs vacuum cleaner
 
+**This custom component is replaced by [Deebot 4 Home Assistant](https://github.com/DeebotUniverse/Deebot-4-Home-Assistant).
+A migration guide is available [here](https://deebot.readthedocs.io/integrations/home-assistant/migration/).**
+
 ![Preview](docs/images/prev.jpg)
 
 # Know working models:
