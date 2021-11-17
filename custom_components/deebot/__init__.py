@@ -46,10 +46,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if not is_ha_supported():
         return False
 
-    _LOGGER.warning(
-        'This custom component is replaced by "Deebot 4 Home Assistant". '
-        "More information can be found under https://deebot.readthedocs.io/integrations/home-assistant/migration/"
-    )
+
 
     # Store an instance of the "connecting" class that does the work of speaking
     # with your actual devices.
