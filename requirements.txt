@@ -7,6 +7,6 @@ black==21.9b0
 flake8==3.9.2
 isort==5.9.3
 mypy==0.910
-pylint==2.11.1
+pylint==2.12.2
 pylint-strict-informational==0.1
 pre-commit==2.15.0
