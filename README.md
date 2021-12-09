@@ -8,6 +8,7 @@
 - Deebot ozmo T8+
 - Deebot ozmo T8
 - Deebot ozmo T8 AIVI
+- Deebot ozmo N8+
 - Deebot ozmo T5
 - Deebot ozmo 960
 - Deebot ozmo 950
